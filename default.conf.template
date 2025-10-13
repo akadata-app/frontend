@@ -5,25 +5,11 @@ server {
   root /usr/share/nginx/html;
   index index.html;
 
-    # Configuración específica para Vue Router con history mode
-  location / {
-    # Intentar servir el archivo solicitado, luego la carpeta, luego index.html
-    try_files $uri $uri/ @fallback;
-  }
-
-  # Fallback para todas las rutas de la SPA
-  location @fallback {
-    rewrite ^.*$ /index.html last;
-  }
-
-  # Manejo específico para prevenir que las rutas de Vue se traten como directorios
-  location ~ ^/(herramientas-evaluacion|modelo-de-madurez|taxonomia)/ {
-    try_files $uri @fallback;
-  }
-
-  # Fallback para SPA routing
-  location @fallback {
-    rewrite ^.*$ /index.html last;
+  # Prevenir cache del index.html
+  location = /index.html {
+    add_header Cache-Control "no-cache, no-store, must-revalidate";
+    add_header Pragma "no-cache";
+    add_header Expires "0";
   }
 
   # Cache optimizado para assets estáticos
@@ -31,13 +17,6 @@ server {
     expires 1y;
     add_header Cache-Control "public, immutable";
     try_files $uri =404;
-  }
-
-  # Prevenir cache del index.html
-  location = /index.html {
-    add_header Cache-Control "no-cache, no-store, must-revalidate";
-    add_header Pragma "no-cache";
-    add_header Expires "0";
   }
 
   # Proxy para el backend cuando se despliega detrás de un único puerto (Koyeb)
@@ -55,6 +34,12 @@ server {
     proxy_connect_timeout 30s;
     proxy_send_timeout 30s;
     proxy_read_timeout 30s;
+  }
+
+  # Configuración para SPA - DEBE ser la última location
+  # Intenta servir el archivo, si no existe, sirve index.html
+  location / {
+    try_files $uri $uri/ /index.html;
   }
 
   # Headers de seguridad
