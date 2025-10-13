@@ -16,9 +16,8 @@ export default defineConfig({
     },
   },
   build: {
-    // Generar sourcemaps para debugging en producción
-    sourcemap: false,
-    // Optimizar el bundle
+    // Asegurar que los assets se resuelvan correctamente
+    assetsDir: 'assets',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -27,6 +26,8 @@ export default defineConfig({
       }
     }
   },
+  // Configuración base para producción - usar ruta absoluta
+  base: '/',
   // Configuración del servidor de desarrollo
   server: {
     historyApiFallback: true,
