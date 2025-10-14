@@ -42,7 +42,7 @@ const equipo = [
     nombre: 'Katherine Rodríguez Mejía',
     rol: 'Estudiante de Ingeniería de sistemas de la Universidad de Antioquia.',
     foto: usermale,
-    borde: 'borde-verde'
+    borde: 'borde-purpura'
   },
 ];
 </script>
