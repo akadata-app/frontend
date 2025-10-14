@@ -34,16 +34,18 @@
       </div>
     </div>
 
-    <div class="button-container" v-if="isAuthenticated">
-      <button class="cta-button" @click.prevent="onOpenHerramienta">IR A LA HERRAMIENTA</button>
+    <div v-if="isAuthenticated">
+      <div class="button-container">
+        <button class="cta-button" @click.prevent="onOpenHerramienta">VER TAXONOMÍAS</button>
+      </div>
+      
+      <div class="button-container" v-if="userRole === 'ADMIN'">
+        <button class="cta-button" @click.prevent="onOpenFormulario">CONFIGURACIÓN</button>
+      </div>
     </div>
-    
+
     <div class="button-container" v-else>
-      <p class="login-message">Por favor, <router-link to="/" class="login-link">inicia sesión</router-link> para acceder a la herramienta</p>
-    </div>
-    
-    <div class="button-container" v-if="userRole === 'ADMIN'">
-      <button class="cta-button" @click.prevent="onOpenFormulario">CONFIGURACION</button>
+      <p class="login-message">Por favor, <router-link to="/" class="login-link">inicia sesión</router-link> para acceder a las taxonomías.</p>
     </div>
   </div>
 </template>
