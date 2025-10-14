@@ -36,19 +36,19 @@
             <input type="text" id="segundoApellido" v-model="form.segundoApellido" />
           </div>
           <div class="form-group">
-            <label for="email">Correo electrónico*</label>
+            <label for="email">Correo electrónico *</label>
             <input type="email" id="email" v-model="form.email" required />
           </div>
           <div class="form-group">
-            <label for="confirmEmail">Confirmación de correo electrónico*</label>
+            <label for="confirmEmail">Confirmación de correo electrónico *</label>
             <input type="email" id="confirmEmail" v-model="form.confirmEmail" required />
           </div>
           <div class="form-group">
-            <label for="password">Contraseña*</label>
+            <label for="password">Contraseña *</label>
             <input type="password" id="password" v-model="form.password" required />
           </div>
           <div class="form-group">
-            <label for="confirmPassword">Confirmación de contraseña*</label>
+            <label for="confirmPassword">Confirmación de contraseña *</label>
             <input type="password" id="confirmPassword" v-model="form.confirmPassword" required />
           </div>
         </div>
@@ -69,8 +69,8 @@
           </div>
 
           <div class="checkbox-group">
-            <input type="checkbox" id="terms" v-model="form.acceptedTerms" />
-            <label for="terms">Política de privacidad y términos de uso</label>
+            <input type="checkbox" id="terms" v-model="form.acceptedTerms" required />
+            <label for="terms">Política de privacidad y términos de uso *</label>
           </div>
 
           <button type="submit" class="submit-button">Continuar</button>

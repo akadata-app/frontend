@@ -2,7 +2,7 @@
   <div class="profile-container" v-if="user">
     <h2>Mi perfil</h2>
     <form @submit.prevent="onSubmit" class="profile-form">
-      <label>Nombre</label>
+      <label>Primer nombre</label>
       <input v-model="form.name" />
 
       <label>Segundo nombre</label>
@@ -19,11 +19,6 @@
 
       <label>Tamaño de la organización</label>
       <input v-model="form.industrySize" />
-
-      <label>Rol</label>
-      <select v-model="form.role">
-        <option v-for="role in roles" :key="role" :value="role">{{ role }}</option>
-      </select>
 
       <label>Nueva contraseña</label>
       <input type="password" v-model="form.newPassword" />
