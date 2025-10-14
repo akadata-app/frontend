@@ -31,15 +31,34 @@
         </p>
       </div>
     </div>
+<!--
+    <div v-if="isAuthenticated">
+      <div class="button-container">
+        <button class="cta-button">IR A LA HERRAMIENTA</button>
+      </div>
 
-    <div class="button-container">
-      <button class="cta-button">IR A LA HERRAMIENTA</button>
+      <div class="button-container" v-if="userRole === 'ADMIN'">
+        <button class="cta-button">CONFIGURACIÓN</button>
+      </div>
     </div>
+
+    <div class="button-container" v-else>
+        <p class="login-message">Por favor, <router-link to="/" class="login-link">inicia sesión</router-link> para acceder a la herramienta.</p>
+    </div>
+-->
   </div>
 </template>
 
 <script setup>
-// pas de logique ici
+import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+const router = useRouter()
+const userRole = ref(localStorage.getItem('userRole'))
+const isAuthenticated = ref(false)
+
+onMounted(() => {
+  isAuthenticated.value = !!localStorage.getItem('jwtToken')
+})
 </script>
 
 <style scoped>
