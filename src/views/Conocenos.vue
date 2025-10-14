@@ -23,6 +23,7 @@
 <script setup>
 import gina from '@/assets/img/gina.jpg';
 import julian from '@/assets/img/julian.jpg';
+import usermale from '@/assets/img/placeholder_user_female.png';
 
 const equipo = [
   {
@@ -40,7 +41,7 @@ const equipo = [
   {
     nombre: 'Katherine Rodríguez Mejía',
     rol: 'Estudiante de Ingeniería de sistemas de la Universidad de Antioquia.',
-    foto: null,
+    foto: usermale,
     borde: 'borde-verde'
   },
 ];
