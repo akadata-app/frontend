@@ -1,22 +1,41 @@
 <template>
   <div class="page-container">
     <div class="card-container">
-      <h1 class="title">Taxonomías</h1>
+      <div class="page-header">
+        <h1 class="title">Taxonomías</h1>
+        <p class="subtitle">Selecciona un formulario de taxonomía para comenzar</p>
+      </div>
 
-      <div v-if="loading" class="loading">Cargando...</div>
-      <div v-if="error" class="error">{{ error }}</div>
+      <div v-if="loading" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Cargando formularios...</p>
+      </div>
+      
+      <div v-if="error" class="error-state">
+        <span class="error-icon">⚠</span>
+        <p>{{ error }}</p>
+      </div>
 
-      <div v-if="!loading && !error" class="forms-list">
+      <div v-if="!loading && !error && forms.length === 0" class="empty-state">
+        <span class="empty-icon">📋</span>
+        <p>No hay formularios disponibles en este momento</p>
+      </div>
+
+      <div v-if="!loading && !error && forms.length > 0" class="forms-list">
         <div
           v-for="form in forms"
           :key="form.id"
           class="form-item"
           @click="goToForm(form.id)"
         >
-          <h2>{{ form.title }}</h2>
-          <p class="description">
-            {{ form.description || '' }}
-          </p>
+          <div class="form-icon">📊</div>
+          <div class="form-content">
+            <h2>{{ form.title }}</h2>
+            <p class="description">
+              {{ form.description || 'Formulario de taxonomía para evaluación de gobernanza de datos' }}
+            </p>
+          </div>
+          <div class="form-arrow">→</div>
         </div>
       </div>
     </div>
@@ -58,89 +77,185 @@ export default {
 </script>
 
 <style scoped>
-/* Harmonisation du style avec les autres fichiers */
 .page-container {
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background: #f7f7fa;
-  padding: 20px;
+  align-items: flex-start;
+  min-height: calc(100vh - 200px);
+  background: #ffffff;
+  padding: 2rem;
+  font-family: 'Roboto', sans-serif;
 }
 
 .card-container {
-  background: #fff;
-  padding: 32px 28px;
-  border-radius: 18px;
-  box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+  background: #ffffff;
+  padding: 2.5rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
   max-width: 900px;
   width: 100%;
-  border: 1px solid #ececf1;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #e5e7eb;
 }
 
 .title {
-  color: #222;
-  text-align: center;
+  color: #56005b;
   font-size: 2rem;
-  margin-bottom: 24px;
   font-weight: 600;
+  margin-bottom: 0.5rem;
 }
 
-/* Liste verticale */
-.forms-list {
+.subtitle {
+  color: #6b7280;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.loading-state,
+.error-state,
+.empty-state {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+  gap: 1rem;
 }
 
-.form-item {
-  background: #fafbfc;
-  border-radius: 12px;
-  padding: 18px 20px;
-  cursor: pointer;
-  transition: box-shadow 0.2s, transform 0.2s;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #56005b;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
-.form-item:hover {
-  transform: translateY(-2px) scale(1.01);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-  border-color: #bdbdf7;
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-.form-item h2 {
-  font-size: 1.1rem;
-  color: #222;
-  margin-bottom: 6px;
+.loading-state p {
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.error-state {
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 1.5rem;
+}
+
+.error-icon {
+  font-size: 2rem;
+}
+
+.error-state p {
+  margin: 0;
   font-weight: 500;
 }
 
-.form-item p {
-  font-size: 0.95rem;
-  color: #555;
+.empty-state {
+  color: #6b7280;
+}
+
+.empty-icon {
+  font-size: 3rem;
+}
+
+.empty-state p {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.forms-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-item {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+  border: 1px solid #e5e7eb;
+}
+
+.form-item:hover {
+  border-color: #56005b;
+}
+
+.form-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  border-radius: 6px;
+}
+
+.form-content {
+  flex: 1;
+}
+
+.form-item h2 {
+  font-size: 1.3rem;
+  color: #56005b;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
 }
 
 .description {
-  margin-top: 8px;
-  font-size: 0.9rem;
-  color: #444;
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.6;
 }
 
-.loading {
-  text-align: center;
-  color: #bbb;
-  font-size: 1.1rem;
-  margin: 30px 0;
+.form-arrow {
+  font-size: 1.25rem;
+  color: #56005b;
+  flex-shrink: 0;
 }
 
-.error {
-  text-align: center;
-  color: #d9534f;
-  background: #fff0f0;
-  border: 1px solid #ffd6d6;
-  border-radius: 8px;
-  padding: 12px 0;
-  margin: 30px 0;
+/* Responsive */
+@media (max-width: 768px) {
+  .page-container {
+    padding: 1rem;
+  }
+  
+  .card-container {
+    padding: 2rem 1.5rem;
+  }
+  
+  .title {
+    font-size: 1.8rem;
+  }
+  
+  .form-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+  
+  .form-arrow {
+    display: none;
+  }
 }
 </style>

@@ -3,17 +3,23 @@
     class="resource-card"
     @click="openInNewTab"
   >
-    <img :src="imageSrc" :alt="resource.title" class="resource-img" />
+    <div class="resource-image-wrapper">
+      <img :src="imageSrc" :alt="resource.title" class="resource-img" />
+    </div>
 
-    <h3 class="resource-title">{{ resource.title }}</h3>
+    <div class="resource-content">
+      <h3 class="resource-title">{{ resource.title }}</h3>
 
-    <p class="resource-formats" v-if="resource.formatNames?.length">
-      {{ resource.formatNames.join(' | ') }}
-    </p>
+      <p class="resource-formats" v-if="resource.formatNames?.length">
+        <span class="format-tag" v-for="(format, index) in resource.formatNames" :key="index">
+          {{ format }}
+        </span>
+      </p>
 
-    <p class="resource-description">
-      {{ resource.description }}
-    </p>
+      <p class="resource-description" v-if="resource.description">
+        {{ resource.description }}
+      </p>
+    </div>
   </div>
 </template>
 
@@ -27,16 +33,13 @@ const props = defineProps({
   }
 })
 
-// 🖼️ Si l'image est en base64, on la préfixe
 const imageSrc = computed(() =>
   props.resource.image?.startsWith('data:image')
     ? props.resource.image
     : `data:image/png;base64,${props.resource.image}`
 )
 
-// 🔗 Ouvre le lien dans un nouvel onglet
 const openInNewTab = () => {
-  console.log(props.resource)
   if (props.resource.link) {
     window.open(props.resource.link, '_blank', 'noopener,noreferrer')
   }
@@ -48,43 +51,82 @@ const openInNewTab = () => {
   display: flex;
   flex-direction: column;
   cursor: pointer;
-  transition: transform 0.2s;
-  max-width: 320px;
-  margin: 0 auto;
-  padding: 1rem;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  background-color: #fff;
+  background: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  font-family: 'Roboto', sans-serif;
+  transition: border-color 0.2s ease;
 }
 
 .resource-card:hover {
-  transform: translateY(-4px);
+  border-color: #56005b;
+}
+
+.resource-image-wrapper {
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+  background: #f3f4f6;
 }
 
 .resource-img {
   width: 100%;
-  border-radius: 16px;
+  height: 100%;
   object-fit: cover;
-  aspect-ratio: 16 / 9;
-  background-color: #f0f0f0;
+}
+
+.resource-content {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .resource-title {
   font-size: 1.1rem;
   font-weight: 600;
-  margin-top: 0.8rem;
-  color: #2e5400;
+  margin: 0;
+  color: #56005b;
+  line-height: 1.4;
 }
 
 .resource-formats {
-  font-size: 0.85rem;
-  color: #46823b;
-  margin-top: 0.3rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.format-tag {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background: #f3f4f6;
+  color: #56005b;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .resource-description {
-  font-size: 0.85rem;
-  color: #444;
-  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .resource-card {
+    max-width: 100%;
+  }
+  
+  .resource-image-wrapper {
+    height: 160px;
+  }
 }
 </style>

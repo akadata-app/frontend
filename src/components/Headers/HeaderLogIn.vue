@@ -42,7 +42,7 @@ const router = useRouter()
 const userName = ref('')
 
 onMounted(() => {
-  userName.value = getUserName() || 'Utilisateur'
+  userName.value = getUserName() || 'Usuario'
 })
 
 function onLogout() {
@@ -76,9 +76,10 @@ function onOpenProfile() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #32621c; /* Vert UdeA */
-  padding: 0.75rem 2rem;
+  background-color: #32621c;
+  padding: 1rem 2rem;
   color: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .logo-link {
@@ -88,25 +89,26 @@ function onOpenProfile() {
 }
 
 .logo {
-  height: 45px;
+  height: 40px;
   margin-right: 0.75rem;
 }
 
 .site-title {
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-size: 1.4rem;
+  font-weight: 600;
   color: white;
   margin: 0;
+  font-family: 'Roboto', sans-serif;
 }
 
 .nav {
   flex: 1;
-  margin-left: 2rem;
+  margin-left: 3rem;
 }
 
 .nav-list {
   display: flex;
-  gap: 2rem;
+  gap: 2.5rem;
   list-style: none;
   padding: 0;
   margin: 0;
@@ -115,12 +117,14 @@ function onOpenProfile() {
 .nav-list a {
   color: white;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 400;
   font-size: 0.95rem;
+  font-family: 'Roboto', sans-serif;
+  transition: opacity 0.2s ease;
 }
 
 .nav-list a:hover {
-  text-decoration: underline;
+  opacity: 0.8;
 }
 
 .right-section {
@@ -130,20 +134,22 @@ function onOpenProfile() {
 }
 
 .user-button {
-  background-color: #f9b115; /* Jaune bouton */
-  color: black;
-  padding: 0.5rem 1.2rem;
-  border-radius: 999px;
-  font-weight: 600;
+  background-color: #f9b115;
+  color: #1c1c1c;
+  padding: 0.5rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 500;
+  font-family: 'Roboto', sans-serif;
 }
 
 .logout-button {
-  background-color: #4b0a38; /* Violet sombre */
+  background-color: #4b0a38;
   color: white;
-  padding: 0.5rem 1.2rem;
-  border-radius: 999px;
-  font-weight: 600;
+  padding: 0.5rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 500;
   text-decoration: none;
+  font-family: 'Roboto', sans-serif;
   transition: background-color 0.2s ease;
 }
 
@@ -155,6 +161,7 @@ function onOpenProfile() {
   background: none;
   border: none;
   cursor: pointer;
+  padding: 0.25rem;
 }
 
 .menu-icon {

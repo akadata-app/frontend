@@ -4,7 +4,7 @@
     <div class="success-card">
       <div class="success-icon">✓</div>
       <h1 class="success-title">¡Respuesta enviada!</h1>
-      <p class="success-message">Gracias por completar el modelo de madurez . Tus respuestas han sido guardadas correctamente.</p>
+      <p class="success-message">Gracias por completar el modelo de madurez. Tus respuestas han sido guardadas correctamente.</p>
       <div class="success-actions">
         <button @click="goToFormsList" class="btn-next">Volver a la lista</button>
         <button v-if="isAdmin" @click="goToReport" class="btn-prev">Ver reporte</button>
@@ -14,55 +14,129 @@
 
   <!-- Formulario -->
   <div v-else-if="domain" class="domain-container">
-    <h1 class="domain-title">{{ domain.name }}</h1>
-    <div class="kda-question-block">
-      <strong>{{ currentKda.name }}</strong>
-      <p>{{ currentKda.question }}</p>
+    <!-- Header con progreso -->
+    <div class="form-header">
+      <div class="header-top">
+        <button class="btn-back" @click="goToFormsList">
+          <span class="back-icon">←</span>
+          <span>Volver</span>
+        </button>
+        <div class="progress-info">
+          <span class="progress-text">Pregunta {{ currentKdaIndex + 1 }} de {{ domain.kdas.length }}</span>
+        </div>
+      </div>
+      <h1 class="domain-title">{{ domain.name }}</h1>
+      <div class="progress-bar-container">
+        <div class="progress-bar" :style="{ width: progressPercentage + '%' }"></div>
+      </div>
     </div>
-    <div class="kda-table">
-      <table>
-        <thead>
-          <tr>
-            <th class="no-center">Descripción del nivel</th>
-            <th>Nivel actual</th>
-            <th>Nivel deseado</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="level in 5" :key="'level-'+level">
-            <td class="desc-cell">
-              {{ currentKda['level' + level] }}
-            </td>
-            <td>
+
+    <!-- Bloque de pregunta -->
+    <div class="kda-question-block">
+      <div class="question-header">
+        <span class="question-label">Pregunta</span>
+        <h2 class="question-name">{{ currentKda.name }}</h2>
+      </div>
+      <p class="question-text">{{ currentKda.question }}</p>
+    </div>
+
+    <!-- Tabla de niveles horizontal -->
+    <div class="kda-table-wrapper">
+      <div class="levels-container-horizontal">
+        <div 
+          v-for="level in 5" 
+          :key="'level-'+level"
+          class="level-column"
+          :class="{ 
+            'selected-actual': answers[currentKda.id]?.actual === level,
+            'selected-desired': answers[currentKda.id]?.desired === level
+          }"
+        >
+          <div class="level-header">
+            <div class="level-number">Nivel {{ level }}</div>
+          </div>
+          
+          <div class="level-description">
+            <p class="level-text">{{ currentKda['level' + level] }}</p>
+          </div>
+          
+          <div class="level-radio-section">
+            <div class="radio-group-label">Nivel actual</div>
+            <label class="radio-label" :class="{ 'selected': answers[currentKda.id]?.actual === level }">
               <input
                 type="radio"
                 :name="`actual-${currentKda.id}`"
                 :value="level"
                 v-model="answers[currentKda.id].actual"
+                class="radio-input"
               />
-            </td>
-            <td>
+              <span class="radio-custom"></span>
+            </label>
+          </div>
+          
+          <div class="level-radio-section">
+            <div class="radio-group-label">Nivel deseado</div>
+            <label class="radio-label" :class="{ 'selected': answers[currentKda.id]?.desired === level }">
               <input
                 type="radio"
                 :name="`desired-${currentKda.id}`"
                 :value="level"
                 v-model="answers[currentKda.id].desired"
+                class="radio-input"
               />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="kda-description">
-        {{ currentKda.description }}
+              <span class="radio-custom"></span>
+            </label>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="navigation-buttons">
-      <button class="btn-prev" v-if="hasPreviousKda" @click="goToPreviousKda">Pregunta anterior</button>
-      <button class="btn-next" v-if="hasNextKda && answeredCurrentKda" @click="goToNextKda">Siguiente pregunta</button>
-      <button class="btn-next" v-if="!hasNextKda && allKdasAnswered" @click="goToNextDomainOrSubmit">Siguiente dominio / Enviar</button>
+
+    <!-- Descripción adicional -->
+    <div v-if="currentKda.description" class="kda-description">
+      <div class="description-icon">ℹ️</div>
+      <p>{{ currentKda.description }}</p>
     </div>
+
+    <!-- Indicador de completitud -->
+    <div v-if="!answeredCurrentKda" class="completion-hint">
+      <span class="hint-icon">💡</span>
+      <span>Por favor, selecciona el nivel actual y el nivel deseado para continuar</span>
+    </div>
+
+    <!-- Navegación -->
+    <div class="navigation-buttons">
+      <button 
+        class="btn-prev" 
+        v-if="hasPreviousKda" 
+        @click="goToPreviousKda"
+      >
+        <span class="btn-icon">←</span>
+        <span>Pregunta anterior</span>
+      </button>
+      
+      <button 
+        class="btn-next" 
+        v-if="hasNextKda && answeredCurrentKda" 
+        @click="goToNextKda"
+        :disabled="!answeredCurrentKda"
+      >
+        <span>Siguiente pregunta</span>
+        <span class="btn-icon">→</span>
+      </button>
+      
+      <button 
+        class="btn-submit" 
+        v-if="!hasNextKda && allKdasAnswered" 
+        @click="goToNextDomainOrSubmit"
+        :disabled="!allKdasAnswered"
+      >
+        <span>Finalizar dominio</span>
+        <span class="btn-icon">✓</span>
+      </button>
+    </div>
+
     <div v-if="submitMsg" class="submit-message">{{ submitMsg }}</div>
-  <canvas id="radarChart" width="400" height="400"></canvas>
+    <canvas id="radarChart" width="400" height="400"></canvas>
   </div>
 </template>
 
@@ -95,6 +169,11 @@ const isAdmin = computed(() => {
 
 const currentKdaIndex = ref(0)
 const currentKda = computed(() => domain.value?.kdas[currentKdaIndex.value] || {})
+
+const progressPercentage = computed(() => {
+  if (!domain.value || !domain.value.kdas.length) return 0
+  return ((currentKdaIndex.value + 1) / domain.value.kdas.length) * 100
+})
 
 onMounted(async () => {
   const res = await MaturityModelService.getById(formId)
@@ -194,94 +273,392 @@ function goToReport() {
 
 <style scoped>
 .domain-container {
-  max-width: 900px;
-  margin: 2rem auto;
-  background: #fff;
-  border-radius: 18px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-  padding: 2rem 2.5rem;
+  max-width: 1400px;
+  margin: 1rem auto;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  padding: 1.5rem;
+  font-family: 'Roboto', sans-serif;
+}
+
+/* Header con progreso */
+.form-header {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.btn-back {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: 1px solid #d1d5db;
+  color: #4b5563;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  font-family: 'Roboto', sans-serif;
+}
+
+.btn-back:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.back-icon {
+  font-size: 1rem;
+}
+
+.progress-info {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-weight: 500;
 }
 
 .domain-title {
-  color: #32621c;
-  font-size: 2.2rem;
-  font-weight: 700;
+  color: #56005b;
+  font-size: 1.5rem;
+  font-weight: 600;
   margin-bottom: 0.5rem;
 }
 
-.kda-table {
-  margin: 2rem 0 1.5rem 0;
-}
-
-table {
+.progress-bar-container {
   width: 100%;
-  border-radius: 16px;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 4px;
   overflow: hidden;
-  border-collapse: collapse;
-  background: #eee;
+  margin-top: 0.5rem;
 }
 
-th, td {
-  padding: 1rem;
-  font-size: 1rem;
-  text-align: center;
-  vertical-align: middle;
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #56005b, #7a007f);
+  border-radius: 4px;
+  transition: width 0.3s ease;
 }
 
-th {
-  background: #ddd;
+/* Bloque de pregunta */
+.kda-question-block {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid #e5e7eb;
+}
+
+.question-header {
+  margin-bottom: 0.5rem;
+}
+
+.question-label {
+  display: inline-block;
+  background: #56005b;
+  color: #ffffff;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
   font-weight: 600;
-  border-bottom: 2px solid #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
 }
 
-.no-center {
-  text-align: left;
+.question-name {
+  color: #56005b;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0.25rem 0 0 0;
+  line-height: 1.3;
 }
 
-.desc-cell {
-  text-align: left;
-  font-size: 1rem;
-  color: #333;
-  width: 70%;
-  white-space: normal;
-  word-wrap: break-word;
+.question-text {
+  color: #4b5563;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
 }
 
-input[type="radio"] {
-  accent-color: #32621c;
+/* Tabla de niveles horizontal */
+.kda-table-wrapper {
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.levels-container-horizontal {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0;
+  min-width: 1000px;
+}
+
+.level-column {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+  background: #ffffff;
+}
+
+.level-column:last-child {
+  border-right: none;
+}
+
+.level-column:hover {
+  background: #f9fafb;
+}
+
+.level-column.selected-actual {
+  background: #eff6ff;
+  border-top: 3px solid #3b82f6;
+}
+
+.level-column.selected-desired {
+  background: #f0fdf4;
+  border-top: 3px solid #10b981;
+}
+
+.level-header {
+  background: #56005b;
+  color: #ffffff;
+  padding: 0.6rem 0.5rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.level-number {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.level-description {
+  padding: 0.75rem 0.6rem;
+  height: 90px;
+  display: flex;
+  align-items: flex-start;
+  border-bottom: 1px solid #e5e7eb;
+  overflow-y: auto;
+}
+
+.level-text {
+  color: #374151;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  text-align: center;
+  margin: 0;
+}
+
+.level-radio-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0.6rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.level-radio-section:last-child {
+  border-bottom: none;
+}
+
+.radio-group-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.radio-label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+}
+
+.radio-input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+.radio-custom {
+  position: relative;
   width: 22px;
   height: 22px;
+  border: 2px solid #d1d5db;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: all 0.2s ease;
 }
 
-.kda-question-block {
-  margin-top: 1.5rem;
-  margin-bottom: 0.5rem;
+.radio-label:hover .radio-custom {
+  border-color: #56005b;
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px rgba(86, 0, 91, 0.1);
 }
 
-.kda-question-block strong {
-  font-size: 1.1rem;
-  color: #32621c;
+.radio-input:checked + .radio-custom {
+  background: #56005b;
+  border-color: #56005b;
 }
 
+.radio-input:checked + .radio-custom::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.radio-label.selected .radio-custom {
+  box-shadow: 0 0 0 4px rgba(86, 0, 91, 0.15);
+}
+
+/* Descripción adicional */
 .kda-description {
-  margin-top: 1.2rem;
-  font-size: 1rem;
-  color: #666;
-  text-align: left;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  background: #f0f7ed;
+  border: 1px solid #d4e1d5;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-top: 0.75rem;
+  color: #065f46;
+  font-size: 0.8rem;
+  line-height: 1.5;
 }
 
+.description-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.kda-description p {
+  margin: 0;
+}
+
+/* Indicador de completitud */
+.completion-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fff3cd;
+  border: 1px solid #ffc700;
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  margin-top: 0.75rem;
+  color: #856404;
+  font-size: 0.8rem;
+}
+
+.hint-icon {
+  font-size: 1.1rem;
+}
+
+/* Navegación */
 .navigation-buttons {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 1rem;
-  margin-top: 2rem;
-  justify-content: flex-end;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.btn-prev,
+.btn-next,
+.btn-submit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Roboto', sans-serif;
+}
+
+.btn-prev {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.btn-prev:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.btn-next {
+  background: #ffc700;
+  color: #1c1c1c;
+  margin-left: auto;
+}
+
+.btn-next:hover:not(:disabled) {
+  background: #e2a100;
+}
+
+.btn-submit {
+  background: #56005b;
+  color: #ffffff;
+  margin-left: auto;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background: #7a007f;
+}
+
+.btn-prev:disabled,
+.btn-next:disabled,
+.btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-icon {
+  font-size: 1.1rem;
 }
 
 .submit-message {
   margin-top: 1.5rem;
-  color: #218838;
-  font-weight: 500;
+  padding: 0.875rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  color: #dc2626;
   text-align: center;
+  font-weight: 500;
 }
 
 canvas#radarChart {
@@ -300,9 +677,9 @@ canvas#radarChart {
 }
 
 .success-card {
-  background: #fff;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
   padding: 3rem 2rem;
   text-align: center;
   max-width: 500px;
@@ -310,29 +687,29 @@ canvas#radarChart {
 }
 
 .success-icon {
-  width: 80px;
-  height: 80px;
-  background: #32621c;
+  width: 60px;
+  height: 60px;
+  background: #6d8e5a;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 1.5rem;
-  font-size: 3rem;
+  font-size: 2rem;
   color: #fff;
   font-weight: bold;
 }
 
 .success-title {
-  color: #32621c;
-  font-size: 2rem;
-  font-weight: 700;
+  color: #56005b;
+  font-size: 1.75rem;
+  font-weight: 600;
   margin-bottom: 1rem;
 }
 
 .success-message {
-  color: #666;
-  font-size: 1.1rem;
+  color: #6b7280;
+  font-size: 1rem;
   line-height: 1.6;
   margin-bottom: 2rem;
 }
@@ -344,35 +721,76 @@ canvas#radarChart {
   flex-wrap: wrap;
 }
 
-.btn-prev {
-  background: #ccc;
-  color: #000000;
-  border: none;
-  padding: 0.7rem 1rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 400;
-  transition: all 0.2s ease;
+/* Responsive */
+@media (max-width: 1200px) {
+  .levels-container-horizontal {
+    grid-template-columns: repeat(3, 1fr);
+    min-width: 750px;
+  }
 }
 
-.btn-prev:hover {
-  background: #ddd;
-  transform: translateY(-2px);
+@media (max-width: 768px) {
+  .domain-container {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+
+  .domain-title {
+    font-size: 1.75rem;
+  }
+
+  .levels-container-horizontal {
+    grid-template-columns: repeat(2, 1fr);
+    min-width: 500px;
+  }
+
+  .level-description {
+    padding: 0.6rem 0.5rem;
+    height: 80px;
+  }
+
+  .level-text {
+    font-size: 0.8rem;
+  }
+
+  .level-radio-section {
+    padding: 1rem 0.75rem;
+  }
+
+  .radio-group-label {
+    font-size: 0.7rem;
+  }
+
+  .navigation-buttons {
+    flex-direction: column;
+  }
+
+  .btn-next,
+  .btn-submit {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .btn-prev {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
-.btn-next {
-  background: #32621c;
-  color: #fff;
-  border: none;
-  padding: 0.7rem 1rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 400;
-  transition: all 0.2s ease;
-}
+@media (max-width: 480px) {
+  .levels-container-horizontal {
+    grid-template-columns: 1fr;
+    min-width: 280px;
+  }
 
-.btn-next:hover {
-  background: #2a5318;
-  transform: translateY(-2px);
+  .level-column {
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .level-column:last-child {
+    border-bottom: none;
+  }
 }
 </style>

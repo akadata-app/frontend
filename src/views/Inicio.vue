@@ -1,22 +1,6 @@
 <template>
   <div class="inicio-container">
-    <!-- Columna izquierda: recursos dinámicos -->
-    <div class="left-column">
-      <template v-if="resources && resources.length">
-        <ResourceCard
-          v-for="(resource, index) in resources"
-          :key="index"
-          :resource="resource"
-        />
-      </template>
-      <div v-else class="empty-state">
-        <h3>Aún no hay recursos</h3>
-        <p>Cuando se publiquen documentos o videos, aparecerán aquí.</p>
-      </div>
-    </div>
-
-    <!-- Columna derecha: contenido Akadata -->
-    <div class="right-column">
+    <div class="content-wrapper">
       <section class="hero">
         <h1>Transformando la Gobernanza de Datos en la Educación Superior</h1>
         <p class="subtitle">
@@ -54,7 +38,7 @@
       <section class="cta">
         <button class="cta-btn" @click="goTo('/herramientas-evaluacion')">
           ¿Listos para transformar la gobernanza de datos en tu institución?
-          <span class="arrow" aria-hidden="true">→</span>
+          <span class="arrow">→</span>
         </button>
       </section>
     </div>
@@ -62,27 +46,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import ResourceCard from '@/components/ResourceCard.vue'
-import OpenRessourceService from '@/services/openRessourceService'
 
-// Estado
-const resources = ref([])
-
-// Cargar recursos
-const fetchResources = async () => {
-  try {
-    const res = await OpenRessourceService.getAll()
-    resources.value = res.data
-  } catch (error) {
-    console.error('Error al cargar recursos:', error)
-  }
-}
-
-onMounted(fetchResources)
-
-// Navegación
 const router = useRouter()
 function goTo(path) {
   router.push(path)
@@ -90,166 +55,145 @@ function goTo(path) {
 </script>
 
 <style scoped>
-/* Layout */
 .inicio-container {
   display: flex;
-  gap: 24px;
-  align-items: flex-start;
-  padding: 16px;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 200px);
+  padding: 3rem 2rem;
+  background: #ffffff;
+  font-family: 'Roboto', sans-serif;
 }
 
-.left-column {
-  flex: 1;
-  min-width: 300px;
-  display: grid;
-  gap: 16px;
+.content-wrapper {
+  max-width: 900px;
+  width: 100%;
+  text-align: center;
 }
 
-.right-column {
-  flex: 1.1;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  position: sticky;
-  top: 16px;
-}
-
-/* Hero */
 .hero {
-  background: radial-gradient(120% 120% at 0% 0%, rgba(79, 70, 229, 0.12), transparent 60%),
-  linear-gradient(180deg, #ffffff, #f8fafc);
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 6px 20px rgba(2, 6, 23, 0.06);
+  margin-bottom: 3rem;
 }
 
 .hero h1 {
-  margin: 0 0 8px;
-  font-size: 1.6rem;
-  line-height: 1.25;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  color: #0f172a;
+  margin: 0 0 1rem;
+  font-size: 2rem;
+  line-height: 1.4;
+  font-weight: 600;
+  color: #56005b;
 }
 
 .subtitle {
   margin: 0;
-  color: #334155;
+  color: #4a5568;
   font-size: 1rem;
+  line-height: 1.6;
 }
 
-/* Tarjeta Akadata */
 .akadata-card {
-  background: #ffffff;
+  margin-bottom: 3rem;
+  padding: 2rem;
+  background: #f9fafb;
+  border-radius: 8px;
   border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  padding: 18px 20px;
-  box-shadow: 0 3px 14px rgba(15, 23, 42, 0.05);
-  color: #0f172a;
 }
 
 .akadata-card p {
   margin: 0;
-  line-height: 1.6;
+  line-height: 1.7;
+  font-size: 1rem;
+  color: #4a5568;
+  text-align: left;
 }
 
-/* Features */
+.akadata-card strong {
+  color: #56005b;
+  font-weight: 600;
+}
+
+.akadata-card em {
+  color: #56005b;
+  font-style: normal;
+  font-weight: 500;
+}
+
 .features {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 3rem;
+  text-align: left;
 }
 
 .feature {
+  padding: 1.5rem;
   background: #ffffff;
+  border-radius: 8px;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 2px 10px rgba(2, 6, 23, 0.04);
-  transition: transform 160ms ease, box-shadow 160ms ease;
-}
-
-.feature:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.08);
 }
 
 .feature h3 {
-  margin: 0 0 6px;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #111827;
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #56005b;
 }
 
 .feature p {
   margin: 0;
-  color: #475569;
-  font-size: 0.98rem;
-  line-height: 1.55;
+  color: #4a5568;
+  font-size: 0.95rem;
+  line-height: 1.6;
 }
 
-/* CTA */
 .cta {
   display: flex;
   justify-content: center;
-  margin-top: 4px;
+  margin-top: 2rem;
 }
 
 .cta-btn {
   appearance: none;
-  border: 0;
-  border-radius: 999px;
-  padding: 12px 18px;
-  background: linear-gradient(90deg, #4f46e5, #7c3aed);
-  color: #ffffff;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  border: none;
+  border-radius: 6px;
+  padding: 0.875rem 2rem;
+  background: #ffc700;
+  color: #1c1c1c;
+  font-weight: 500;
   cursor: pointer;
-  box-shadow: 0 10px 24px rgba(124, 58, 237, 0.25);
-  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+  transition: background-color 0.2s ease;
+  font-size: 1rem;
+  font-family: 'Roboto', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .cta-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 14px 30px rgba(124, 58, 237, 0.32);
-  filter: brightness(1.02);
-}
-
-.cta-btn:active {
-  transform: translateY(0);
+  background: #e2a100;
 }
 
 .arrow {
-  padding-left: 8px;
-}
-
-/* Estado vacío */
-.empty-state {
-  border: 1px dashed #cbd5e1;
-  background: #f8fafc;
-  color: #475569;
-  border-radius: 12px;
-  padding: 18px;
-  text-align: center;
-}
-
-.empty-state h3 {
-  margin: 0 0 4px;
-  font-size: 1.05rem;
-  color: #0f172a;
+  font-size: 1rem;
 }
 
 /* Responsive */
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .inicio-container {
-    flex-direction: column;
+    padding: 2rem 1rem;
   }
-  .right-column {
-    position: static;
+  
+  .hero h1 {
+    font-size: 1.75rem;
   }
-  .features {
-    grid-template-columns: 1fr;
+  
+  .subtitle {
+    font-size: 0.95rem;
+  }
+  
+  .cta-btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
   }
 }
 </style>

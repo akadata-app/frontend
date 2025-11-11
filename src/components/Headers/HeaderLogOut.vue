@@ -42,15 +42,15 @@ function onOpenInicio() {
 }
 
 function onOpenRessources() {
-  router.push({ name: 'OpenRessources' }) // redirige vers /open-ressources
+  router.push({ name: 'OpenRessources' })
 }
 
 function onOpenConocenos() {
-  router.push({ name: 'Conocenos'})    //redirige vers /Conocenos
+  router.push({ name: 'Conocenos'})
 }
 
 function onHerramientasEvaluacion() {
-  router.push({ name: 'HerramientasEvaluacion' }) // redirige vers /herramientas-evaluacion
+  router.push({ name: 'HerramientasEvaluacion' })
 }
 </script>
 
@@ -59,9 +59,10 @@ function onHerramientasEvaluacion() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #32621c; /* Vert UdeA */
-  padding: 0.75rem 2rem;
+  background-color: #32621c;
+  padding: 1rem 2rem;
   color: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .logo-link {
@@ -71,39 +72,42 @@ function onHerramientasEvaluacion() {
 }
 
 .logo {
-  height: 45px;
+  height: 40px;
   margin-right: 0.75rem;
 }
 
 .site-title {
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-size: 1.4rem;
+  font-weight: 600;
   color: white;
   margin: 0;
+  font-family: 'Roboto', sans-serif;
 }
 
 .nav {
   flex: 1;
-  margin-left: 2rem;
+  margin-left: 3rem;
 }
 
 .nav-list {
   display: flex;
-  gap: 2rem;
+  gap: 2.5rem;
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.nav-list a {
+.nav-clickable {
+  cursor: pointer;
   color: white;
-  text-decoration: none;
-  font-weight: 500;
+  font-weight: 400;
   font-size: 0.95rem;
+  font-family: 'Roboto', sans-serif;
+  transition: opacity 0.2s ease;
 }
 
-.nav-list a:hover {
-  text-decoration: underline;
+.nav-clickable:hover {
+  opacity: 0.8;
 }
 
 .right-section {
@@ -113,13 +117,14 @@ function onHerramientasEvaluacion() {
 }
 
 .login-button {
-  background-color: #f9b115; /* Jaune bouton */
-  color: black;
-  padding: 0.5rem 1.2rem;
+  background-color: #f9b115;
+  color: #1c1c1c;
+  padding: 0.5rem 1.5rem;
   border: none;
-  border-radius: 999px;
+  border-radius: 6px;
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 500;
+  font-family: 'Roboto', sans-serif;
   transition: background-color 0.2s ease;
 }
 
@@ -131,22 +136,12 @@ function onHerramientasEvaluacion() {
   background: none;
   border: none;
   cursor: pointer;
+  padding: 0.25rem;
 }
 
 .menu-icon {
   width: 24px;
   height: 24px;
   filter: brightness(100);
-}
-
-.nav-clickable {
-  cursor: pointer;
-  color: white;
-  font-weight: 500;
-  font-size: 0.95rem;
-}
-
-.nav-clickable:hover {
-  text-decoration: underline;
 }
 </style>

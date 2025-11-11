@@ -1,30 +1,39 @@
 <template>
   <div class="resource-page">
-    <!-- Barre de filtre et recherche -->
+    <div class="page-header">
+      <h1 class="page-title">Recursos abiertos</h1>
+      <p class="page-subtitle">Explora documentos, videos y herramientas para la alfabetización digital institucional</p>
+    </div>
+
+    <!-- Barra de filtro y búsqueda -->
     <div class="filter-bar">
-      <div class="filter-group">
-        <label for="filter-select">🎯 Filtrar :</label>
-        <select id="filter-select" v-model="filter">
+      <div class="search-wrapper">
+        <input
+          id="search"
+          type="text"
+          v-model="search"
+          placeholder="Buscar recursos..."
+          class="search-input"
+        />
+      </div>
+
+      <div class="filter-wrapper">
+        <select id="filter-select" v-model="filter" class="filter-select">
           <option v-for="option in formatOptions" :key="option" :value="option">
             {{ option }}
           </option>
         </select>
       </div>
-
-      <div class="search-group">
-        <label for="search">🔍 Buscar :</label>
-        <input
-          id="search"
-          type="text"
-          v-model="search"
-          placeholder="Título del recurso..."
-        />
-      </div>
     </div>
 
-    <div v-if="resources.length === 0">
-      ⏳ Loading...
+    <div v-if="resources.length === 0" class="loading-state">
+      <p>Cargando recursos...</p>
     </div>
+    
+    <div v-else-if="filteredResources.length === 0" class="empty-state">
+      <p class="empty-text">No se encontraron recursos con los filtros seleccionados</p>
+    </div>
+    
     <div v-else class="resource-grid">
       <ResourceCard
         v-for="(resource, index) in filteredResources"
@@ -50,21 +59,18 @@ const formatOptions = computed(() => {
   return ['Todos', ...formats.value.map(f => f.name)]
 })
 
-// Appel API pour récupérer les ressources et formats
 const fetchData = async () => {
   try {
     const resResources = await OpenRessourceService.getAll()
     resources.value = resResources.data
-    console.log('Ressources chargées:', resources.value)
   } catch (error) {
-    console.error('Erreur de chargement des ressources :', error)
+    console.error('Error al cargar recursos:', error)
   }
   try {
     const resFormats = await formatService.getAll()
     formats.value = resFormats.data
-    console.log('Formats chargés:', formats.value)
   } catch (error) {
-    console.error('Erreur de chargement des formats :', error)
+    console.error('Error al cargar formatos:', error)
   }
 }
 
@@ -85,76 +91,125 @@ const filteredResources = computed(() => {
     return matchFormat && matchSearch
   })
 })
-
 </script>
 
 <style scoped>
-/* 🔷 Structure principale */
 .resource-page {
-  display: flex;
-  flex-direction: column;
+  max-width: 1200px;
+  margin: 0 auto;
   padding: 2rem;
-  gap: 2rem;
-  background-color: #ffffff;
+  background: #ffffff;
+  min-height: calc(100vh - 200px);
+  font-family: 'Roboto', sans-serif;
 }
 
-/* 🟢 Barre filtres + recherche */
+.page-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #56005b;
+  margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+  font-size: 0.95rem;
+  color: #6b7280;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
 .filter-bar {
   display: flex;
-  align-items: center;
-  gap: 2rem;
-  padding: 1rem 1.5rem;
-  background-color: #f3f9f4;
-  border: 1px solid #d4e1d5;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-  max-width: 100%;
-  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
 }
 
-.filter-group,
-.search-group {
-  display: flex;
-  flex-direction: column;
+.search-wrapper {
+  flex: 1;
 }
 
-.filter-group label,
-.search-group label {
-  font-weight: 600;
-  margin-bottom: 0.3rem;
-  color: #2e5400;
+.search-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  color: #1f2937;
+  font-family: 'Roboto', sans-serif;
 }
 
-.filter-group select,
-.search-group input {
-  padding: 0.6rem 1rem;
-  font-size: 1rem;
-  border-radius: 8px;
-  border: 1px solid #b5d2b9;
-  background-color: #fff;
-  width: 250px;
-  transition: border-color 0.3s;
-}
-
-.filter-group select:focus,
-.search-group input:focus {
+.search-input:focus {
   outline: none;
-  border-color: #2e5400;
+  border-color: #56005b;
 }
 
-/* 🟦 Grille des cartes */
+.search-input::placeholder {
+  color: #9ca3af;
+}
+
+.filter-wrapper {
+  min-width: 180px;
+}
+
+.filter-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  color: #1f2937;
+  font-family: 'Roboto', sans-serif;
+  cursor: pointer;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #56005b;
+}
+
+.loading-state,
+.empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #6b7280;
+}
+
+.empty-text {
+  font-size: 1rem;
+}
+
 .resource-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-  justify-items: center;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
+  .resource-page {
+    padding: 1.5rem 1rem;
+  }
+  
+  .page-title {
+    font-size: 1.75rem;
+  }
+  
   .filter-bar {
     flex-direction: column;
-    align-items: flex-start;
+  }
+  
+  .resource-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
