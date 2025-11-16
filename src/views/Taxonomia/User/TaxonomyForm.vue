@@ -1,20 +1,46 @@
 <template>
   <div class="taxonomy-form">
-    <div class="form-header">
-      <h1 class="form-title">{{ form.title }}</h1>
-      <p v-if="form.description" class="form-description">{{ form.description }}</p>
+    <!-- Loading state -->
+    <div v-if="loading" class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Cargando formulario...</p>
     </div>
 
-    <!-- Progress indicator -->
-    <div class="progress-section">
-      <div class="progress-bar">
-        <div class="progress-fill" :style="{ width: progressPercentage + '%' }"></div>
+    <!-- Error state -->
+    <div v-else-if="error" class="error-state">
+      <span class="error-icon">⚠</span>
+      <p>{{ error }}</p>
+      <button class="btn-secondary" @click="$router.push({ name: 'FormsList' })">
+        Volver a la lista
+      </button>
+    </div>
+
+    <!-- Empty state -->
+    <div v-else-if="!form || !form.layers || form.layers.length === 0" class="empty-state">
+      <span class="empty-icon">📋</span>
+      <h2>Formulario vacío</h2>
+      <p>Este formulario no tiene capas configuradas.</p>
+      <button class="btn-secondary" @click="$router.push({ name: 'FormsList' })">
+        Volver a la lista
+      </button>
+    </div>
+
+    <!-- Form content -->
+    <template v-else>
+      <div class="form-header">
+        <h1 class="form-title">{{ form.title || 'Formulario de Taxonomía' }}</h1>
+        <p v-if="form.description" class="form-description">{{ form.description }}</p>
       </div>
-      <p class="progress-text">{{ completedLayers }} de {{ form.layers?.length || 0 }} capas completadas</p>
-    </div>
+      <!-- Progress indicator -->
+      <div class="progress-section">
+        <div class="progress-bar">
+          <div class="progress-fill" :style="{ width: progressPercentage + '%' }"></div>
+        </div>
+        <p class="progress-text">{{ completedLayers }} de {{ form.layers?.length || 0 }} capas completadas</p>
+      </div>
 
-    <!-- Layers con acordeones -->
-    <div class="layers-container" v-if="form.layers && form.layers.length">
+      <!-- Layers con acordeones -->
+      <div class="layers-container" v-if="form.layers && form.layers.length">
       <div
         v-for="(layer, layerIndex) in form.layers"
         :key="layer.id"
@@ -115,17 +141,18 @@
       </div>
     </div>
 
-    <!-- Botones de acción -->
-    <div class="form-actions">
-      <button class="btn-secondary" @click="goBack">
-        <span class="btn-icon">←</span>
-        Volver
-      </button>
-      <button class="btn-primary" @click="showConfirmModal = true" :disabled="!isFormComplete">
-        <span>Finalizar formulario</span>
-        <span class="btn-icon">→</span>
-      </button>
-    </div>
+      <!-- Botones de acción -->
+      <div class="form-actions">
+        <button class="btn-secondary" @click="goBack">
+          <span class="btn-icon">←</span>
+          Volver
+        </button>
+        <button class="btn-primary" @click="showConfirmModal = true" :disabled="!isFormComplete">
+          <span>Finalizar formulario</span>
+          <span class="btn-icon">→</span>
+        </button>
+      </div>
+    </template>
 
     <!-- Modal de confirmación -->
     <div v-if="showConfirmModal" class="modal-overlay" @click.self="showConfirmModal = false">
@@ -164,13 +191,16 @@ export default {
       userChoices: {},
       openLayers: {},
       openDimensions: {},
-      showConfirmModal: false
+      showConfirmModal: false,
+      loading: true,
+      error: null
     };
   },
   computed: {
     completedLayers() {
-      if (!this.form.layers) return 0;
+      if (!this.form || !this.form.layers || !Array.isArray(this.form.layers)) return 0;
       return this.form.layers.filter(layer => {
+        if (!layer || !layer.dimensions || !Array.isArray(layer.dimensions)) return false;
         const layerChoices = this.userChoices[layer.id] || {};
         return layer.dimensions.some(dim => {
           const dimChoice = layerChoices[dim.id];
@@ -179,7 +209,7 @@ export default {
       }).length;
     },
     progressPercentage() {
-      if (!this.form.layers || this.form.layers.length === 0) return 0;
+      if (!this.form || !this.form.layers || !Array.isArray(this.form.layers) || this.form.layers.length === 0) return 0;
       return (this.completedLayers / this.form.layers.length) * 100;
     },
     isFormComplete() {
@@ -187,27 +217,92 @@ export default {
     }
   },
   async mounted() {
-    this.form = (await taxonomyFormService.getFormById(this.$route.params.id)).data;
+    this.loading = true;
+    this.error = null;
     
-    // Inicializar userChoices
-    this.form.layers.forEach(layer => {
-      this.userChoices[layer.id] = {};
-      this.openLayers[layer.id] = true; // Abrir todas las capas por defecto
+    try {
+      const formId = this.$route.params.id;
+      if (!formId) {
+        throw new Error('ID de formulario no proporcionado');
+      }
       
-      layer.dimensions.forEach(dim => {
-        this.userChoices[layer.id][dim.id] = {
-          dimensionId: dim.id,
-          isSelected: 0, // Por defecto desactivado
-          features: dim.features.map(f => ({
-            id: f.id,
-            selected: 0
-          }))
-        };
-        this.openDimensions[dim.id] = true; // Abrir todas las dimensiones por defecto
+      console.log('Cargando formulario con ID:', formId);
+      const response = await taxonomyFormService.getFormById(formId);
+      console.log('Respuesta completa del servidor:', response);
+      console.log('Datos del formulario:', response.data);
+      
+      // Extraer datos del formulario
+      const formData = response.data || {};
+      
+      // Validar que el formulario tenga la estructura esperada
+      if (!formData || !formData.id) {
+        throw new Error('El formulario no se encontró o está vacío.');
+      }
+      
+      // Asignar el formulario
+      this.form = {
+        id: formData.id,
+        title: formData.title || 'Formulario sin título',
+        description: formData.description || '',
+        layers: Array.isArray(formData.layers) ? formData.layers : []
+      };
+      
+      console.log(`Formulario cargado: ${this.form.title} con ${this.form.layers.length} capas`);
+      
+      // Inicializar userChoices solo si hay capas
+      if (this.form.layers.length > 0) {
+        this.form.layers.forEach(layer => {
+          if (!layer || !layer.id) return;
+          
+          this.userChoices[layer.id] = {};
+          this.openLayers[layer.id] = true; // Abrir todas las capas por defecto
+          
+          // Validar y normalizar dimensions
+          if (!layer.dimensions || !Array.isArray(layer.dimensions)) {
+            layer.dimensions = [];
+            console.warn(`La capa ${layer.name || layer.id} no tiene dimensiones válidas.`);
+          }
+          
+          layer.dimensions.forEach(dim => {
+            if (!dim || !dim.id) return;
+            
+            // Validar y normalizar features
+            if (!dim.features || !Array.isArray(dim.features)) {
+              dim.features = [];
+              console.warn(`La dimensión ${dim.name || dim.id} no tiene características válidas.`);
+            }
+            
+            this.userChoices[layer.id][dim.id] = {
+              dimensionId: dim.id,
+              isSelected: 0, // Por defecto desactivado
+              features: dim.features.map(f => ({
+                id: f.id,
+                selected: 0
+              }))
+            };
+            this.openDimensions[dim.id] = true; // Abrir todas las dimensiones por defecto
+          });
+        });
+        
+        console.log('UserChoices inicializado:', this.userChoices);
+      } else {
+        console.warn('El formulario no tiene capas.');
+      }
+      
+    } catch (error) {
+      console.error('Error al cargar el formulario:', error);
+      console.error('Detalles del error:', {
+        message: error.message,
+        response: error.response,
+        status: error.response?.status,
+        data: error.response?.data
       });
-    });
-    
-    console.log('Formulaire chargé:', this.form);
+      
+      const errorMessage = error.response?.data?.message || error.message || 'No se pudo cargar el formulario.';
+      this.error = errorMessage;
+    } finally {
+      this.loading = false;
+    }
   },
   methods: {
     toggleLayer(layerId) {
@@ -266,9 +361,9 @@ export default {
       return padded.slice(0, 6);
     },
     isLayerCompleted(layerId) {
-      const layerChoices = this.userChoices[layer.id] || {};
-      const layer = this.form.layers.find(l => l.id === layerId);
-      if (!layer) return false;
+      const layerChoices = this.userChoices[layerId] || {};
+      const layer = this.form.layers?.find(l => l.id === layerId);
+      if (!layer || !layer.dimensions) return false;
       
       return layer.dimensions.some(dim => {
         const dimChoice = layerChoices[dim.id];
@@ -276,13 +371,9 @@ export default {
       });
     },
     emitChoice(layerId) {
-      const layer = this.form.layers.find(l => l.id === layerId);
+      if (!this.form || !this.form.layers) return;
+      const layer = this.form.layers.find(l => l && l.id === layerId);
       if (!layer) return;
-      
-      const dimensionsOnly = {};
-      Object.keys(this.userChoices[layerId] || {}).forEach(key => {
-        dimensionsOnly[key] = this.userChoices[layerId][key];
-      });
       
       const fullObj = {
         formId: this.form.id,
@@ -1057,6 +1148,75 @@ function generatePDF(jsonData) {
   background: linear-gradient(135deg, #5a7a4a 0%, #6d8e5a 100%);
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(109, 142, 90, 0.4);
+}
+
+/* Loading, Error, and Empty states */
+.loading-state,
+.error-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  gap: 1.5rem;
+  min-height: 400px;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #56005b;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-state p {
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.error-state {
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 2rem;
+}
+
+.error-icon {
+  font-size: 3rem;
+}
+
+.error-state p {
+  margin: 0.5rem 0;
+  font-weight: 500;
+  font-size: 1.1rem;
+}
+
+.empty-state {
+  color: #6b7280;
+}
+
+.empty-icon {
+  font-size: 4rem;
+}
+
+.empty-state h2 {
+  color: #56005b;
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.empty-state p {
+  font-size: 1rem;
+  margin: 0.5rem 0;
 }
 
 /* Responsive */

@@ -24,6 +24,20 @@
             <label>Correo electrónico</label>
             <input v-model="form.email" type="email" class="form-input" />
           </div>
+
+          <div class="form-group">
+            <label>Rol</label>
+            <input 
+              v-model="form.role" 
+              type="text" 
+              class="form-input" 
+              disabled
+              :placeholder="form.role || 'No asignado'"
+            />
+            <p class="role-description">
+              {{ roleDisplay }}
+            </p>
+          </div>
         </div>
 
         <div class="form-section">
@@ -76,8 +90,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { getUserInfo, updateUserInfo, getUserRoles } from '@/services/authService.js'
+import { ref, computed, onMounted } from 'vue'
+import { getUserInfo, updateUserInfo, getUserRoles, getUserRole } from '@/services/authService.js'
 
 const user = ref(null)
 const roles = ref([])
@@ -95,6 +109,18 @@ const form = ref({
 const successMsg = ref('')
 const errorMsg = ref('')
 
+// Computed para formatear el rol
+const roleDisplay = computed(() => {
+  const role = form.value.role || getUserRole() || ''
+  const roleUpper = role.toUpperCase()
+  if (roleUpper === 'ADMIN' || roleUpper === 'ADMINISTRATOR') {
+    return '👑 Administrador'
+  } else if (roleUpper === 'USER') {
+    return '👤 Usuario'
+  }
+  return 'Sin rol asignado'
+})
+
 onMounted(async () => {
   try {
     const [userRes, rolesRes] = await Promise.all([
@@ -103,9 +129,23 @@ onMounted(async () => {
     ])
     user.value = userRes.data
     Object.assign(form.value, userRes.data)
+    
+    // Asegurar que el rol esté cargado (del servidor o localStorage)
+    if (!form.value.role) {
+      const roleFromStorage = localStorage.getItem('userRole')
+      if (roleFromStorage) {
+        form.value.role = roleFromStorage
+      }
+    }
+    
     roles.value = rolesRes.data
   } catch (e) {
     errorMsg.value = "No se pudo cargar la información del usuario o los roles."
+    // Intentar cargar el rol desde localStorage como fallback
+    const roleFromStorage = localStorage.getItem('userRole')
+    if (roleFromStorage) {
+      form.value.role = roleFromStorage
+    }
   }
 })
 
@@ -114,8 +154,11 @@ async function onSubmit() {
   successMsg.value = ''
   try {
     const oldEmail = user.value.email
-    await updateUserInfo(form.value)
-    localStorage.setItem('userRole', form.value.role)
+    
+    // No enviar el rol en la actualización (el rol no se puede cambiar por el usuario)
+    const { role, ...updateData } = form.value
+    await updateUserInfo(updateData)
+    
     if (form.value.email !== oldEmail) {
       successMsg.value = "Correo actualizado. Por favor, inicia sesión nuevamente."
       setTimeout(() => {
@@ -232,6 +275,17 @@ async function onSubmit() {
   background: #f9fafb;
   color: #6b7280;
   cursor: not-allowed;
+}
+
+.role-description {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  background: #f3f4f6;
+  border-radius: 4px;
+  border-left: 3px solid #56005b;
 }
 
 .success-message {

@@ -56,12 +56,33 @@ export default {
   },
   methods: {
     async fetchForms() {
+      this.loading = true;
+      this.error = null;
       try {
         const response = await taxonomyFormService.getFormsList();
-        this.forms = response.data;
+        console.log('Respuesta completa:', response);
+        
+        // Manejar diferentes formatos de respuesta
+        if (Array.isArray(response.data)) {
+          this.forms = response.data;
+        } else if (response.data?.content && Array.isArray(response.data.content)) {
+          this.forms = response.data.content;
+        } else if (response.data?.data && Array.isArray(response.data.data)) {
+          this.forms = response.data.data;
+        } else {
+          this.forms = [];
+        }
+        
         console.log('Formularios cargados:', this.forms);
-      } catch {
-        this.error = "No se pudo cargar los formularios.";
+      } catch (err) {
+        console.error('Error al cargar formularios:', err);
+        const errorMessage = err.response?.data?.message || err.message || "No se pudo cargar los formularios.";
+        this.error = errorMessage;
+        
+        // Si es un error 401 o 403, podría ser un problema de autenticación
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          this.error = "No tienes permisos para acceder a los formularios. Por favor, inicia sesión.";
+        }
       } finally {
         this.loading = false;
       }

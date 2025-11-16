@@ -1,10 +1,28 @@
 <template>
   <div
     class="resource-card"
-    @click="openInNewTab"
+    @click="handleCardClick"
   >
     <div class="resource-image-wrapper">
       <img :src="imageSrc" :alt="resource.title" class="resource-img" />
+      
+      <!-- Botones de acción (solo para administradores) -->
+      <div v-if="isAdmin" class="resource-actions" @click.stop>
+        <button 
+          @click="handleEdit" 
+          class="action-btn edit-btn" 
+          title="Editar recurso"
+        >
+          ✏️
+        </button>
+        <button 
+          @click="handleDelete" 
+          class="action-btn delete-btn" 
+          title="Eliminar recurso"
+        >
+          🗑️
+        </button>
+      </div>
     </div>
 
     <div class="resource-content">
@@ -30,8 +48,14 @@ const props = defineProps({
   resource: {
     type: Object,
     required: true
+  },
+  isAdmin: {
+    type: Boolean,
+    default: false
   }
 })
+
+const emit = defineEmits(['edit', 'delete'])
 
 const imageSrc = computed(() =>
   props.resource.image?.startsWith('data:image')
@@ -39,10 +63,34 @@ const imageSrc = computed(() =>
     : `data:image/png;base64,${props.resource.image}`
 )
 
-const openInNewTab = () => {
+const handleCardClick = (event) => {
+  // Solo abrir el enlace si no se hizo click en los botones de acción
+  if (!event.target.closest('.resource-actions')) {
+    openInNewTab(event)
+  }
+}
+
+const openInNewTab = (event) => {
+  // Prevenir la propagación del evento si se hace click en elementos interactivos
+  if (event) {
+    event.stopPropagation()
+  }
+  
   if (props.resource.link) {
     window.open(props.resource.link, '_blank', 'noopener,noreferrer')
+  } else {
+    console.warn('El recurso no tiene un enlace configurado')
   }
+}
+
+const handleEdit = (event) => {
+  event.stopPropagation()
+  emit('edit', props.resource)
+}
+
+const handleDelete = (event) => {
+  event.stopPropagation()
+  emit('delete', props.resource)
 }
 </script>
 
@@ -68,6 +116,7 @@ const openInNewTab = () => {
   height: 180px;
   overflow: hidden;
   background: #f3f4f6;
+  position: relative;
 }
 
 .resource-img {
@@ -117,6 +166,44 @@ const openInNewTab = () => {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.resource-actions {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+  z-index: 10;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.edit-btn:hover {
+  background: #eff6ff;
+}
+
+.delete-btn:hover {
+  background: #fef2f2;
 }
 
 /* Responsive */
