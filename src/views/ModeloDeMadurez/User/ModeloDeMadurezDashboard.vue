@@ -5,8 +5,9 @@
         <h6>Reporte del Modelo de Madurez</h6>
         <h1>{{ report.formTitle || '' }}</h1>
       </div>
-      <button @click="downloadPdf" class="download-btn">
-        Descargar reporte
+      <button @click="downloadPdf" class="download-btn" :disabled="downloading">
+        <span v-if="downloading">Generando PDF...</span>
+        <span v-else>📥 Descargar reporte</span>
       </button>
     </div>
   <p v-if="!report">Cargando el reporte…</p>
@@ -71,6 +72,7 @@ const formId = Number(route.params.formId)
 const report = ref(null)
 const charts = []
 const canvasRefs = ref({})
+const downloading = ref(false)
 
 // Computed properties para las métricas
 const totalKdas = computed(() => {
@@ -257,60 +259,88 @@ watch([report, canvasRefs], async () => {
 }, { deep: true })
 
 async function downloadPdf() {
-  const pdf = new jsPDF('p', 'mm', 'a4')
-  let y = 10
+  if (downloading.value || !report.value) return
   
-  // Agregar títulos
-  const reportHeader = document.querySelector('.report-header > div')
-  if (reportHeader) {
-    const headerCanvas = await html2canvas(reportHeader, { scale: 2 })
-    const headerImgData = headerCanvas.toDataURL('image/png')
-    const headerImgProps = pdf.getImageProperties(headerImgData)
-    const headerPdfWidth = pdf.internal.pageSize.getWidth() - 20
-    const headerPdfHeight = (headerImgProps.height * headerPdfWidth) / headerImgProps.width
-    
-    pdf.addImage(headerImgData, 'PNG', 10, y, headerPdfWidth, headerPdfHeight)
-    y += headerPdfHeight + 20
-  }
+  downloading.value = true
   
-  // Agregar tarjetas
-  const metricCards = document.querySelectorAll('.metric-card')
-  for (let i = 0; i < metricCards.length; i++) {
-    const metricCanvas = await html2canvas(metricCards[i], { scale: 2 })
-    const metricImgData = metricCanvas.toDataURL('image/png')
-    const metricImgProps = pdf.getImageProperties(metricImgData)
-    const metricPdfWidth = pdf.internal.pageSize.getWidth() - 20
-    const metricPdfHeight = (metricImgProps.height * metricPdfWidth) / metricImgProps.width
+  try {
+    const pdf = new jsPDF('p', 'mm', 'a4')
+    let y = 10
     
-    if (y + metricPdfHeight > pdf.internal.pageSize.getHeight() - 10) {
-      pdf.addPage()
-      y = 10
+    // Agregar títulos
+    const reportHeader = document.querySelector('.report-header > div')
+    if (reportHeader) {
+      const headerCanvas = await html2canvas(reportHeader, { 
+        scale: 2,
+        useCORS: true,
+        logging: false
+      })
+      const headerImgData = headerCanvas.toDataURL('image/png')
+      const headerImgProps = pdf.getImageProperties(headerImgData)
+      const headerPdfWidth = pdf.internal.pageSize.getWidth() - 20
+      const headerPdfHeight = (headerImgProps.height * headerPdfWidth) / headerImgProps.width
+      
+      pdf.addImage(headerImgData, 'PNG', 10, y, headerPdfWidth, headerPdfHeight)
+      y += headerPdfHeight + 20
     }
     
-    pdf.addImage(metricImgData, 'PNG', 10, y, metricPdfWidth, metricPdfHeight)
-    y += metricPdfHeight + 10
-  }
-  
-  // Agregar dominios
-  const domainCards = document.querySelectorAll('.domain-card')
-  for (let i = 0; i < domainCards.length; i++) {
-    const domainCanvas = await html2canvas(domainCards[i], { scale: 2 })
-    const domainImgData = domainCanvas.toDataURL('image/png')
-    const domainImgProps = pdf.getImageProperties(domainImgData)
-    const domainPdfWidth = pdf.internal.pageSize.getWidth() - 20
-    const domainPdfHeight = (domainImgProps.height * domainPdfWidth) / domainImgProps.width
-    
-    if (y + domainPdfHeight > pdf.internal.pageSize.getHeight() - 10) {
-      pdf.addPage()
-      y = 10
+    // Agregar tarjetas de métricas
+    const metricCards = document.querySelectorAll('.metric-card')
+    for (let i = 0; i < metricCards.length; i++) {
+      const metricCanvas = await html2canvas(metricCards[i], { 
+        scale: 2,
+        useCORS: true,
+        logging: false
+      })
+      const metricImgData = metricCanvas.toDataURL('image/png')
+      const metricImgProps = pdf.getImageProperties(metricImgData)
+      const metricPdfWidth = pdf.internal.pageSize.getWidth() - 20
+      const metricPdfHeight = (metricImgProps.height * metricPdfWidth) / metricImgProps.width
+      
+      if (y + metricPdfHeight > pdf.internal.pageSize.getHeight() - 10) {
+        pdf.addPage()
+        y = 10
+      }
+      
+      pdf.addImage(metricImgData, 'PNG', 10, y, metricPdfWidth, metricPdfHeight)
+      y += metricPdfHeight + 10
     }
     
-    pdf.addImage(domainImgData, 'PNG', 10, y, domainPdfWidth, domainPdfHeight)
-    y += domainPdfHeight + 20
+    // Agregar dominios con gráficos
+    const domainCards = document.querySelectorAll('.domain-card')
+    for (let i = 0; i < domainCards.length; i++) {
+      const domainCanvas = await html2canvas(domainCards[i], { 
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      })
+      const domainImgData = domainCanvas.toDataURL('image/png')
+      const domainImgProps = pdf.getImageProperties(domainImgData)
+      const domainPdfWidth = pdf.internal.pageSize.getWidth() - 20
+      const domainPdfHeight = (domainImgProps.height * domainPdfWidth) / domainImgProps.width
+      
+      if (y + domainPdfHeight > pdf.internal.pageSize.getHeight() - 10) {
+        pdf.addPage()
+        y = 10
+      }
+      
+      pdf.addImage(domainImgData, 'PNG', 10, y, domainPdfWidth, domainPdfHeight)
+      y += domainPdfHeight + 20
+    }
+    
+    // Generar nombre del archivo
+    const cleanTitle = (report.value?.formTitle || 'Reporte').replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '_')
+    const fileName = `Reporte-MM${formId}-${cleanTitle}.pdf`
+    
+    // Guardar el PDF
+    pdf.save(fileName)
+  } catch (error) {
+    console.error('Error al generar el PDF:', error)
+    alert('Error al generar el PDF. Por favor, intente nuevamente.')
+  } finally {
+    downloading.value = false
   }
-  
-  let cleanTitle = (report.value?.formTitle || '').replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '_')
-  pdf.save(`Reporte-MM${formId}-${cleanTitle}.pdf`)
 }
 </script>
 
