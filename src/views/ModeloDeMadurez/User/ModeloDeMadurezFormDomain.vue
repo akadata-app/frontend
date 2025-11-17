@@ -257,6 +257,12 @@ async function submitForm() {
   try {
     await axios.post(`${API_ROOT}/api/maturity-models/form-response`, dto)
     formSubmitted.value = true
+    // Redirigir automáticamente al reporte y marcar para descarga automática
+    setTimeout(() => {
+      // Guardar en localStorage que se debe descargar automáticamente
+      localStorage.setItem(`autoDownloadReport_${formId}`, 'true')
+      goToReport()
+    }, 2000) // Esperar 2 segundos para que el usuario vea el mensaje de éxito
   } catch (e) {
     submitMsg.value = 'Error al enviar el formulario.'
   }

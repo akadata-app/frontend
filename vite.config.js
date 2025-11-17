@@ -2,13 +2,13 @@ import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import vueDevTools from 'vite-plugin-vue-devtools'
+// import vueDevTools from 'vite-plugin-vue-devtools' // Deshabilitado para evitar error de localStorage en Node.js
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     vue(),
-    vueDevTools(),
+    // vueDevTools() - Deshabilitado temporalmente debido a error con localStorage en Node.js
   ],
   resolve: {
     alias: {
