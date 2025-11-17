@@ -21,6 +21,14 @@
           <!-- Acciones de administrador: botón de reporte -->
           <div v-if="isAdmin" class="admin-actions">
             <button class="btn-admin" @click.stop="goToReport(form.id)">Ver reporte</button>
+            <button 
+              class="btn-download" 
+              @click.stop="downloadReport(form.id)"
+              :disabled="downloadingReports[form.id]"
+            >
+              <span v-if="downloadingReports[form.id]">Generando...</span>
+              <span v-else>📥 Descargar reporte</span>
+            </button>
           </div>
         </div>
       </div>
@@ -33,6 +41,12 @@ import { ref, onMounted, computed } from 'vue'
 import MaturityModelService from '@/services/MaturityModelService'
 import { useRouter } from 'vue-router'
 import { getUserRole } from '@/services/authService'
+import axios from 'axios'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
+
+const API_ROOT = (import.meta?.env?.VITE_API_URL || 'http://localhost:8080').replace(/\/+$/, '')
+
 
 const forms = ref([])
 const loading = ref(true)
@@ -40,6 +54,7 @@ const error = ref(null)
 const router = useRouter()
 const userRole = ref(null)
 const isAdmin = computed(() => (userRole.value || '').includes('ADMIN'))
+const downloadingReports = ref({})
 
 async function fetchForms() {
   try {
@@ -62,6 +77,122 @@ function goToForm(id) {
 
 function goToReport(id) {
   router.push(`/modelo-de-madurez/forms/${id}/reporte`)
+}
+
+async function downloadReport(formId) {
+  if (downloadingReports.value[formId]) return
+  
+  downloadingReports.value[formId] = true
+  
+  try {
+    // Obtener los datos del reporte desde el backend
+    const { data: report } = await axios.get(`${API_ROOT}/api/maturity-models/report/${formId}/dashboard`)
+    
+    // Crear un elemento temporal para renderizar el reporte
+    const tempContainer = document.createElement('div')
+    tempContainer.style.position = 'absolute'
+    tempContainer.style.left = '-9999px'
+    tempContainer.style.top = '-9999px'
+    tempContainer.style.width = '1200px'
+    tempContainer.style.background = '#ffffff'
+    tempContainer.style.padding = '2rem'
+    document.body.appendChild(tempContainer)
+    
+    // Generar HTML del reporte
+    let reportHTML = `
+      <div style="max-width: 1200px; margin: 0 auto;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+          <div>
+            <h6 style="color: #888888; font-size: 1.5rem; font-weight: 400; margin: 0;">Reporte del Modelo de Madurez</h6>
+            <h1 style="margin-top: 0; font-size: 2rem; font-weight: 700;">${report.formTitle || ''}</h1>
+          </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 3rem;">
+          <div style="background: #fff; border-radius: 16px 16px 4px 4px; color: #32621c; padding: 1.5rem; border-bottom: 4px solid #32621c;">
+            <h3 style="font-size: 2rem; font-weight: 700; margin: 0;">${report.domains.length}</h3>
+            <p style="font-size: 1rem; margin: 0.25rem 0 0 0;">Dominios</p>
+          </div>
+          <div style="background: #fff; border-radius: 16px 16px 4px 4px; color: #32621c; padding: 1.5rem; border-bottom: 4px solid #32621c;">
+            <h3 style="font-size: 2rem; font-weight: 700; margin: 0;">${report.domains.reduce((sum, d) => sum + d.kdas.length, 0)}</h3>
+            <p style="font-size: 1rem; margin: 0.25rem 0 0 0;">KDA en total</p>
+          </div>
+          <div style="background: #fff; border-radius: 16px 16px 4px 4px; color: #32621c; padding: 1.5rem; border-bottom: 4px solid #32621c;">
+            <h3 style="font-size: 2rem; font-weight: 700; margin: 0;">${report.totalResponses || 0}</h3>
+            <p style="font-size: 1rem; margin: 0.25rem 0 0 0;">Respuestas</p>
+          </div>
+        </div>
+    `
+    
+    // Agregar información de cada dominio
+    report.domains.forEach(domain => {
+      const avgActual = domain.kdas.length > 0 
+        ? (domain.kdas.reduce((acc, kda) => acc + kda.avgActual, 0) / domain.kdas.length).toFixed(0)
+        : 0
+      const avgDesired = domain.kdas.length > 0
+        ? (domain.kdas.reduce((acc, kda) => acc + kda.avgDesired, 0) / domain.kdas.length).toFixed(0)
+        : 0
+      
+      reportHTML += `
+        <div style="background: #fff; border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; border: 1px solid rgba(0,0,0,0.05);">
+          <div style="text-align: center; margin-bottom: 1.5rem; padding-bottom: 1rem;">
+            <h2 style="color: #32621c; margin: 0 0 0.75rem 0; font-size: 1.5rem; font-weight: 700;">${domain.domainName}</h2>
+            <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+              <span style="background: #f8f9fa; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; color: #555;">${domain.kdas.length} KDA</span>
+              <span style="background: #f8f9fa; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; color: #555;">Nivel actual: ${avgActual}</span>
+              <span style="background: #f8f9fa; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; color: #555;">Nivel deseado: ${avgDesired}</span>
+            </div>
+          </div>
+          <div style="margin-top: 1rem;">
+            <p style="font-weight: 600; margin-bottom: 0.5rem;">Detalles por KDA:</p>
+            <ul style="list-style: none; padding: 0;">
+              ${domain.kdas.map(kda => `
+                <li style="padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;">
+                  <strong>${kda.kdaName}</strong><br>
+                  <span style="color: #666; font-size: 0.9rem;">Actual: ${kda.avgActual.toFixed(1)} / Deseado: ${kda.avgDesired.toFixed(1)}</span>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        </div>
+      `
+    })
+    
+    reportHTML += '</div>'
+    tempContainer.innerHTML = reportHTML
+    
+    // Esperar a que se renderice
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    // Generar PDF
+    const pdf = new jsPDF('p', 'mm', 'a4')
+    const canvas = await html2canvas(tempContainer, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff'
+    })
+    
+    const imgData = canvas.toDataURL('image/png')
+    const imgProps = pdf.getImageProperties(imgData)
+    const pdfWidth = pdf.internal.pageSize.getWidth()
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
+    
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+    
+    // Limpiar
+    document.body.removeChild(tempContainer)
+    
+    // Guardar PDF
+    const cleanTitle = (report.formTitle || 'Reporte').replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '_')
+    pdf.save(`Reporte-MM${formId}-${cleanTitle}.pdf`)
+    
+  } catch (error) {
+    console.error('Error al descargar el reporte:', error)
+    alert('Error al generar el PDF. Por favor, intente nuevamente.')
+  } finally {
+    downloadingReports.value[formId] = false
+  }
 }
 
 onMounted(() => {
@@ -155,10 +286,15 @@ onMounted(() => {
 }
 .admin-actions {
   margin-top: 10px;
-  text-align: right;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .btn-admin {
+  .btn-admin,
+  .btn-download{
   background: #32621c;
   color: #fff;
   border: none;
