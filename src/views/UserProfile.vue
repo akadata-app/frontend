@@ -24,25 +24,6 @@
             <label>Correo electrónico</label>
             <input v-model="form.email" type="email" class="form-input" />
           </div>
-
-          <div class="form-group">
-            <label>Rol</label>
-            <select 
-              v-model="form.role" 
-              class="form-input form-select"
-            >
-              <option value="" disabled>Selecciona un rol</option>
-              <option v-for="roleOption in availableRoles" :key="roleOption" :value="roleOption">
-                {{ formatRoleName(roleOption) }}
-              </option>
-            </select>
-            <p class="role-description">
-              {{ roleDisplay }}
-            </p>
-            <p class="role-hint">
-              Puedes cambiar tu rol en cualquier momento. Los cambios se aplicarán inmediatamente.
-            </p>
-          </div>
         </div>
 
         <div class="form-section">
@@ -112,11 +93,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { getUserInfo, updateUserInfo, getUserRoles, getUserRole } from '@/services/authService.js'
+import { ref, onMounted } from 'vue'
+import { getUserInfo, updateUserInfo } from '@/services/authService.js'
 
 const user = ref(null)
-const roles = ref([])
 const form = ref({
   name: '',
   nameSecond: '',
@@ -124,79 +104,19 @@ const form = ref({
   organizationName: '',
   industry: '',
   industrySize: '',
-  role: '',
   newPassword: '',
   currentPassword: ''
 })
 const successMsg = ref('')
 const errorMsg = ref('')
 
-// Computed para obtener roles disponibles
-const availableRoles = computed(() => {
-  if (roles.value && Array.isArray(roles.value) && roles.value.length > 0) {
-    return roles.value
-  }
-  // Roles por defecto si no se pueden cargar desde el servidor
-  return ['USER', 'ADMIN', 'ADMINISTRATOR']
-})
-
-// Función para formatear el nombre del rol para mostrar
-const formatRoleName = (role) => {
-  const roleUpper = (role || '').toUpperCase()
-  if (roleUpper === 'ADMIN' || roleUpper === 'ADMINISTRATOR') {
-    return '👑 Administrador'
-  } else if (roleUpper === 'USER') {
-    return '👤 Usuario'
-  }
-  return role || 'Sin rol'
-}
-
-// Computed para formatear el rol
-const roleDisplay = computed(() => {
-  const role = form.value.role || getUserRole() || ''
-  const roleUpper = role.toUpperCase()
-  if (roleUpper === 'ADMIN' || roleUpper === 'ADMINISTRATOR') {
-    return '👑 Administrador'
-  } else if (roleUpper === 'USER') {
-    return '👤 Usuario'
-  }
-  return 'Sin rol asignado'
-})
-
 onMounted(async () => {
   try {
-    const [userRes, rolesRes] = await Promise.all([
-      getUserInfo(),
-      getUserRoles()
-    ])
+    const userRes = await getUserInfo()
     user.value = userRes.data
     Object.assign(form.value, userRes.data)
-    
-    // Asegurar que el rol esté cargado (del servidor o localStorage)
-    if (!form.value.role) {
-      const roleFromStorage = localStorage.getItem('userRole')
-      if (roleFromStorage) {
-        form.value.role = roleFromStorage
-      }
-    }
-    
-    // Normalizar los roles recibidos del servidor
-    if (rolesRes.data && Array.isArray(rolesRes.data)) {
-      roles.value = rolesRes.data
-    } else if (rolesRes.data && typeof rolesRes.data === 'object') {
-      // Si viene como objeto, convertir a array
-      roles.value = Object.values(rolesRes.data)
-    } else {
-      // Roles por defecto si no se pueden obtener
-      roles.value = ['USER', 'ADMIN', 'ADMINISTRATOR']
-    }
   } catch (e) {
-    errorMsg.value = "No se pudo cargar la información del usuario o los roles."
-    // Intentar cargar el rol desde localStorage como fallback
-    const roleFromStorage = localStorage.getItem('userRole')
-    if (roleFromStorage) {
-      form.value.role = roleFromStorage
-    }
+    errorMsg.value = "No se pudo cargar la información del usuario."
   }
 })
 
@@ -212,9 +132,8 @@ async function onSubmit() {
   
   try {
     const oldEmail = user.value.email
-    const oldRole = user.value.role || localStorage.getItem('userRole')
     
-    // Preparar los datos de actualización
+    // Preparar los datos de actualización (sin incluir el rol)
     const updateData = {
       name: form.value.name,
       nameSecond: form.value.nameSecond,
@@ -222,7 +141,6 @@ async function onSubmit() {
       organizationName: form.value.organizationName,
       industry: form.value.industry,
       industrySize: form.value.industrySize,
-      role: form.value.role,
       currentPassword: form.value.currentPassword // Siempre requerido por el backend
     }
     
@@ -233,11 +151,7 @@ async function onSubmit() {
     
     await updateUserInfo(updateData)
     
-    // Actualizar localStorage con el nuevo rol si cambió
-    if (updateData.role && updateData.role !== oldRole) {
-      localStorage.setItem('userRole', updateData.role)
-      successMsg.value = "Perfil actualizado correctamente. Tu rol ha sido cambiado."
-    } else if (form.value.email !== oldEmail) {
+    if (form.value.email !== oldEmail) {
       successMsg.value = "Correo actualizado. Por favor, inicia sesión nuevamente."
       setTimeout(() => {
         localStorage.removeItem('jwtToken')
@@ -389,27 +303,6 @@ async function onSubmit() {
 
 .form-select:focus {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2356005b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-}
-
-.role-description {
-  margin: 0.5rem 0 0 0;
-  font-size: 0.85rem;
-  color: #6b7280;
-  font-weight: 500;
-  padding: 0.5rem 0.75rem;
-  background: #f3f4f6;
-  border-radius: 4px;
-  border-left: 3px solid #56005b;
-}
-
-.role-hint {
-  margin: 0.5rem 0 0 0;
-  font-size: 0.8rem;
-  color: #059669;
-  font-style: italic;
-  padding: 0.5rem 0.75rem;
-  background: #d1fae5;
-  border-radius: 4px;
 }
 
 .field-hint {
