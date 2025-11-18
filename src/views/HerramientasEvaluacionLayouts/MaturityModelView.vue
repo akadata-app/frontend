@@ -22,7 +22,7 @@
     <div class="videos-section">
       <h2 class="videos-title">📹 Recursos en Video</h2>
       <div class="videos-container">
-        <a href="https://www.youtube.com/watch?v=fXqhVjtn_lk" target="_blank" rel="noopener noreferrer" class="video-link">
+        <a href="https://www.youtube.com/watch?v=H9AWSctQbwk" target="_blank" rel="noopener noreferrer" class="video-link">
           <span class="video-icon">▶</span>
           <span class="video-text">Ver vídeo Modelo de Madurez</span>
         </a>
