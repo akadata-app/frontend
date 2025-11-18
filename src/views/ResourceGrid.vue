@@ -369,66 +369,6 @@ const fetchData = async () => {
 
 onMounted(fetchData)
 
-// Recursos destacados hardcoded
-const featuredResourcesData = [
-  {
-    id: 'featured-1',
-    title: 'Modelo de Madurez de Gobernanza de Datos para IES-Akadata',
-    description: 'Es una herramienta que permite diagnosticar su nivel actual y esperado en dominios clave de la gobernanza de datos. Evalúa aspectos clave como políticas, procesos, roles, tecnologías, cultura organizacional y toma de decisiones basada en datos.',
-    link: 'https://www.youtube.com/watch?v=H9AWSctQbwk',
-    formatNames: ['Video']
-  },
-  {
-    id: 'featured-2',
-    title: 'Oportunidades de la Gobernanza de Datos para IES',
-    description: 'Descubre cómo la gobernanza de datos puede disparar el potencial de tu universidad. A partir de 97 oportunidades, exploramos 5 palancas clave: liderazgo y estructura (CDO/comités), formación y cultura de datos, modernización tecnológica e integración, ética y cumplimiento, y colaboración interinstitucional. Un mapa práctico para pasar de datos dispersos a decisiones inteligentes y de impacto.',
-    link: 'https://www.youtube.com/watch?v=UPAjKBYp2Vs',
-    formatNames: ['Video']
-  },
-  {
-    id: 'featured-3',
-    title: 'Barreras de la Gobernanza de Datos para IES',
-    description: '¿Por qué las universidades no aprovechan todo el valor de sus datos? En este video mostramos cómo la gobernanza de datos puede transformar la gestión académica y administrativa. A partir de 22 fuentes, identificamos 109 barreras en cinco frentes —organizativas, culturales, tecnológicas, éticas/normativas y económicas— y explicamos dónde se atascan las IES y qué se necesita para avanzar con un enfoque integral.',
-    link: 'https://www.youtube.com/watch?v=om1MYQ-9YBQ',
-    formatNames: ['Video']
-  },
-  {
-    id: 'featured-4',
-    title: 'Taxonomía de Gobernanza de Datos para IES',
-    description: 'Es una estructura conceptual que permite a las Instituciones clasificar, organizar y entender los elementos clave de la gobernanza de datos, a partir de conceptos, categorías, niveles y relaciones comunes. La taxonomía aborda componentes como principios rectores, dominios funcionales, actores y procesos clave proporcionando un marco común para orientar el diseño, evaluación e implementación de programas de gobernanza de datos.',
-    link: 'https://www.youtube.com/watch?v=HfggWRtlYwo',
-    formatNames: ['Video']
-  },
-  {
-    id: 'featured-5',
-    title: '¿Qué es la Gobernanza de Datos?',
-    description: 'Créditos a: ELKIN RIVERA JIMÉNEZ - Magister en Gestión de Tecnologías de La Información',
-    link: 'https://www.youtube.com/watch?v=vm3CDUdAvZ4',
-    formatNames: ['Video']
-  },
-  {
-    id: 'featured-6',
-    title: 'Guía Preeliminar para el diseño de programas de Gobernanza de Datos',
-    description: 'Los datos son activos estratégicos que generan valor para las organizaciones, valor que se potencia con la Gobernanza de Datos (GoD). A pesar de su importancia, la GoD a menudo carece de lineamientos prácticos para su implementación. Este artículo revisa la literatura y encuestó a 41 profesionales de TI para identificar tendencias y desafíos en GoD. Como resultado, se propone una guía práctica basada en personas, procesos y tecnología, con once variables clave. El objetivo es alinear la GoD con los objetivos estratégicos y facilitar su adopción contextualizada',
-    link: 'https://drive.google.com/file/d/1HY35Jzdhiop1DhfZFo0EMgVoHXp0ztuW/view?usp=drive_link',
-    formatNames: ['Documento']
-  },
-  {
-    id: 'featured-7',
-    title: 'Artículo CIIISOL',
-    description: 'Participación presentación del proyecto en la Universidad UCC - CIIISOL 2025',
-    link: 'https://drive.google.com/file/d/1IdruCzJzErAod4rWWO5UJpWYmH_uSt8S/view?usp=drive_link',
-    formatNames: ['Documento']
-  },
-  {
-    id: 'featured-8',
-    title: 'Análisis del estado de la Gobernanza de Datos en universidades: Caso de estudio Facultad de Ingeniería UdeA',
-    description: 'Analizar los desafíos que enfrentan las Instituciones de Educación Superior (IES) en el contexto para la transformación digital y el papel estratégico de la Gobernanza de Datos para mitigar el impacto en su transición y lograr sus objetivos.',
-    link: 'https://drive.google.com/file/d/1NQnXYqSrlN8zCYp2mlM0Zve8dqK9qKUc/view?usp=sharing',
-    formatNames: ['Documento']
-  }
-]
-
 // Filtrar recursos destacados según búsqueda y filtro
 const featuredResources = computed(() => {
   const searchLower = search.value.toLowerCase()
