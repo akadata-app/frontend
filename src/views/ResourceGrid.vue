@@ -310,7 +310,11 @@ const formats = ref([])
 const showAddModal = ref(false)
 const showEditModal = ref(false)
 const showDeleteModal = ref(false)
-const isAdmin = computed(() => getUserRole() === 'ADMIN' || getUserRole() === 'ADMINISTRATOR')
+const isAdmin = computed(() => {
+  const token = localStorage.getItem('jwtToken')
+  const role = getUserRole()
+  return !!(token && (role === 'ADMIN'))
+})
 
 const newResource = ref({
   title: '',
