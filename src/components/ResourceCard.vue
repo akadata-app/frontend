@@ -6,8 +6,8 @@
     <div class="resource-image-wrapper">
       <img :src="imageSrc" :alt="resource.title" class="resource-img" />
       
-      <!-- Botones de acción (solo para administradores) -->
-      <div v-if="isAdmin" class="resource-actions" @click.stop>
+      <!-- Botones de acción (solo para administradores y recursos no destacados) -->
+      <div v-if="isAdmin && !resource.isFeatured" class="resource-actions" @click.stop>
         <button 
           @click="handleEdit" 
           class="action-btn edit-btn" 
@@ -62,11 +62,29 @@ const props = defineProps({
 
 const emit = defineEmits(['edit', 'delete'])
 
-const imageSrc = computed(() =>
-  props.resource.image?.startsWith('data:image')
+const imageSrc = computed(() => {
+  if (!props.resource.image) {
+    // Imagen placeholder atractiva para recursos sin imagen (especialmente videos)
+    // SVG con fondo degradado y icono de play
+    const svg = `
+      <svg width="320" height="180" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#56005b;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#7a007f;stop-opacity:1" />
+          </linearGradient>
+        </defs>
+        <rect width="320" height="180" fill="url(#grad)"/>
+        <circle cx="160" cy="90" r="35" fill="rgba(255,255,255,0.9)"/>
+        <path d="M150 75 L150 105 L175 90 Z" fill="#56005b"/>
+      </svg>
+    `.trim().replace(/\s+/g, ' ')
+    return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)))
+  }
+  return props.resource.image?.startsWith('data:image')
     ? props.resource.image
     : `data:image/png;base64,${props.resource.image}`
-)
+})
 
 const hasValidLink = computed(() => {
   const link = props.resource.link
