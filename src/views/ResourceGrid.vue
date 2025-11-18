@@ -59,7 +59,7 @@
           <button @click="closeEditModal" class="close-btn">×</button>
         </div>
 
-        <form @submit.prevent="handleUpdateSubmit" class="modal-form">
+        <form @submit.prevent="handleSubmit" class="modal-form">
           <div v-if="successMsg" class="success-message">
             <span class="success-icon">✓</span>
             {{ successMsg }}
@@ -103,41 +103,56 @@
           </div>
 
           <div class="form-group">
-            <label>Formatos <span class="required">*</span> <span class="hint">(Selecciona al menos uno)</span></label>
+            <label>Formatos <span class="hint">(Opcional)</span></label>
             <div class="format-checkboxes">
               <label 
                 v-for="format in formats" 
-                :key="format.id" 
+                :key="format.id || format.name" 
                 class="checkbox-label"
-                @click.stop="handleLabelClick($event, format.id)"
               >
                 <input 
                   type="checkbox" 
-                  :value="Number(format.id)" 
+                  :value="format.id ? Number(format.id) : null" 
                   :checked="isFormatSelected(format.id)"
                   class="checkbox-input"
-                  @change="handleFormatChange($event, format.id)"
-                  @click.stop
+                  :disabled="!format.id || isNaN(Number(format.id)) || Number(format.id) <= 0"
+                  @change="handleFormatChange($event)"
+                  :data-format-id="format.id"
                 />
                 <span>{{ format.name }}</span>
               </label>
             </div>
-            <p v-if="!newResource.formatIds || newResource.formatIds.length === 0" class="format-error">
-              ⚠ Debes seleccionar al menos un formato
-            </p>
           </div>
 
           <div class="form-group">
             <label>Imagen (opcional)</label>
+            <div v-if="editingResource && editingResource.image" class="current-image-preview">
+              <p class="file-hint" style="color: #059669; margin-bottom: 0.5rem;">
+                ✓ Imagen actual:
+              </p>
+              <img 
+                :src="editingResource.image?.startsWith('data:image') ? editingResource.image : `data:image/png;base64,${editingResource.image}`" 
+                alt="Imagen actual" 
+                class="preview-image"
+              />
+              <p class="file-hint" style="margin-top: 0.5rem;">
+                Selecciona una nueva imagen para reemplazar la actual
+              </p>
+            </div>
             <input 
               type="file" 
               accept="image/*" 
               @change="handleImageChange" 
               class="form-input form-file"
             />
-            <p class="file-hint">Selecciona una nueva imagen para reemplazar la actual</p>
-            <p v-if="editingResource && editingResource.image" class="file-hint" style="color: #059669;">
-              ✓ Imagen actual disponible (se reemplazará si seleccionas una nueva)
+            <div v-if="newResource.imagePreview" class="new-image-preview">
+              <p class="file-hint" style="color: #059669; margin-bottom: 0.5rem;">
+                ✓ Nueva imagen seleccionada:
+              </p>
+              <img :src="newResource.imagePreview" alt="Nueva imagen" class="preview-image" />
+            </div>
+            <p v-if="!editingResource && !newResource.imagePreview" class="file-hint">
+              Selecciona una imagen para el recurso
             </p>
           </div>
 
@@ -227,28 +242,25 @@
           </div>
 
           <div class="form-group">
-            <label>Formatos <span class="required">*</span> <span class="hint">(Selecciona al menos uno)</span></label>
+            <label>Formatos <span class="hint">(Opcional)</span></label>
             <div class="format-checkboxes">
               <label 
                 v-for="format in formats" 
-                :key="format.id" 
+                :key="format.id || format.name" 
                 class="checkbox-label"
-                @click.stop="handleLabelClick($event, format.id)"
               >
                 <input 
                   type="checkbox" 
-                  :value="Number(format.id)" 
+                  :value="format.id ? Number(format.id) : null" 
                   :checked="isFormatSelected(format.id)"
                   class="checkbox-input"
-                  @change="handleFormatChange($event, format.id)"
-                  @click.stop
+                  :disabled="!format.id || isNaN(Number(format.id)) || Number(format.id) <= 0"
+                  @change="handleFormatChange($event)"
+                  :data-format-id="format.id"
                 />
                 <span>{{ format.name }}</span>
               </label>
             </div>
-            <p v-if="!newResource.formatIds || newResource.formatIds.length === 0" class="format-error">
-              ⚠ Debes seleccionar al menos un formato
-            </p>
           </div>
 
           <div class="form-group">
@@ -259,7 +271,15 @@
               @change="handleImageChange" 
               class="form-input form-file"
             />
-            <p class="file-hint">Selecciona una imagen para el recurso</p>
+            <div v-if="newResource.imagePreview" class="new-image-preview">
+              <p class="file-hint" style="color: #059669; margin-bottom: 0.5rem;">
+                ✓ Imagen seleccionada:
+              </p>
+              <img :src="newResource.imagePreview" alt="Nueva imagen" class="preview-image" />
+            </div>
+            <p v-if="!newResource.imagePreview" class="file-hint">
+              Selecciona una imagen para el recurso
+            </p>
           </div>
 
           <div class="modal-actions">
@@ -297,7 +317,8 @@ const newResource = ref({
   description: '',
   link: '',
   formatIds: [],
-  image: null
+  image: null,
+  imagePreview: null
 })
 
 const editingResource = ref(null)
@@ -307,7 +328,7 @@ const errorMsg = ref('')
 const loading = ref(false)
 
 const formatOptions = computed(() => {
-  return ['Todos', ...formats.value.map(f => f.name)]
+return ['Todos', ...formats.value.map(f => f.name)]
 })
 
 const fetchData = async () => {
@@ -319,17 +340,42 @@ const fetchData = async () => {
   }
   try {
     const resFormats = await formatService.getAll()
-    formats.value = resFormats.data
+    console.log('Respuesta completa de formatos:', resFormats)
+    console.log('Datos de formatos:', resFormats.data)
+    
+    // Cargar todos los formatos directamente sin filtrar
+    formats.value = resFormats.data || []
+    console.log('Formatos cargados:', formats.value)
+    console.log('Total de formatos:', formats.value.length)
+    
+    // Log detallado de cada formato
+    formats.value.forEach((format, index) => {
+      console.log(`Formato ${index + 1}:`, {
+        id: format.id,
+        name: format.name,
+        idType: typeof format.id,
+        idNumber: format.id ? Number(format.id) : null
+      })
+    })
   } catch (error) {
     console.error('Error al cargar formatos:', error)
+    formats.value = []
   }
 }
 
 onMounted(fetchData)
 
 const filteredResources = computed(() => {
+  // IDs específicos que queremos mostrar
+  const allowedIds = [7, 8, 9]
+  
   return resources.value.filter((resource) => {
-    if (!resource || !resource.title) return false
+    // Solo mostrar recursos con IDs permitidos
+    if (!resource || !resource.id || !allowedIds.includes(resource.id)) {
+      return false
+    }
+    
+    if (!resource.title) return false
 
     const matchFormat =
       filter.value === 'Todos' ||
@@ -348,6 +394,9 @@ const handleImageChange = (event) => {
   if (file) {
     const reader = new FileReader()
     reader.onload = (e) => {
+      // Guardar preview para mostrar
+      newResource.value.imagePreview = e.target.result
+      
       // Convertir la imagen a base64 y luego a bytes
       const base64 = e.target.result.split(',')[1]
       // Convertir base64 a byte array
@@ -359,6 +408,9 @@ const handleImageChange = (event) => {
       newResource.value.image = Array.from(bytes)
     }
     reader.readAsDataURL(file)
+  } else {
+    newResource.value.imagePreview = null
+    newResource.value.image = null
   }
 }
 
@@ -369,7 +421,8 @@ const closeModal = () => {
     description: '',
     link: '',
     formatIds: [],
-    image: null
+    image: null,
+    imagePreview: null
   }
   successMsg.value = ''
   errorMsg.value = ''
@@ -378,13 +431,16 @@ const closeModal = () => {
 const handleEditResource = (resource) => {
   editingResource.value = resource
   
-  // Obtener los IDs de los formatos del recurso
+  // Obtener los IDs de los formatos del recurso (solo números válidos)
   const resourceFormatIds = []
   if (resource.formatNames && formats.value.length > 0) {
     resource.formatNames.forEach(formatName => {
       const format = formats.value.find(f => f.name === formatName)
-      if (format) {
-        resourceFormatIds.push(Number(format.id))
+      if (format && format.id) {
+        const numId = Number(format.id)
+        if (!isNaN(numId) && numId > 0) {
+          resourceFormatIds.push(numId)
+        }
       }
     })
   }
@@ -392,7 +448,7 @@ const handleEditResource = (resource) => {
   newResource.value = {
     title: resource.title || '',
     description: resource.description || '',
-    link: resource.link || '',
+    link: (resource.link && resource.link !== 'null' && resource.link !== 'undefined') ? resource.link : '',
     formatIds: resourceFormatIds,
     image: null // No precargamos la imagen, solo permitimos reemplazarla
   }
@@ -410,7 +466,8 @@ const closeEditModal = () => {
     description: '',
     link: '',
     formatIds: [],
-    image: null
+    image: null,
+    imagePreview: null
   }
   successMsg.value = ''
   errorMsg.value = ''
@@ -453,23 +510,68 @@ const confirmDelete = async () => {
 }
 
 const isFormatSelected = (formatId) => {
+  if (!formatId || formatId === null || formatId === undefined) {
+    return false
+  }
+  
   if (!Array.isArray(newResource.value.formatIds)) {
     return false
   }
-  return newResource.value.formatIds.includes(Number(formatId))
+  
+  const numId = Number(formatId)
+  if (isNaN(numId) || numId <= 0) {
+    return false
+  }
+  
+  const isSelected = newResource.value.formatIds.some(id => Number(id) === numId)
+  return isSelected
 }
 
-const handleLabelClick = (event, formatId) => {
-  // Prevenir la propagación del evento
-  event.stopPropagation()
-  // El checkbox manejará su propio cambio
-}
-
-const handleFormatChange = (event, formatId) => {
+const handleFormatChange = (event) => {
   // Prevenir propagación del evento para evitar que se active múltiples veces
   event.stopPropagation()
   
+  // Obtener el ID del formato desde el atributo data-format-id o del value del checkbox
+  let formatId = event.target.getAttribute('data-format-id') || event.target.value
+  
+  console.log('handleFormatChange llamado:', { 
+    formatId, 
+    value: event.target.value,
+    dataFormatId: event.target.getAttribute('data-format-id'),
+    checked: event.target.checked 
+  })
+  
+  // Si aún no hay formatId, intentar obtenerlo del formato correspondiente
+  if (!formatId || formatId === 'null' || formatId === 'undefined') {
+    // Buscar el formato por el valor del checkbox
+    const checkboxValue = event.target.value
+    const format = formats.value.find(f => f.id && Number(f.id) === Number(checkboxValue))
+    if (format && format.id) {
+      formatId = format.id
+    } else {
+      console.error('No se pudo encontrar el ID del formato:', {
+        checkboxValue,
+        formats: formats.value,
+        target: event.target
+      })
+      return
+    }
+  }
+  
+  // Validar que formatId exista y sea válido antes de procesarlo
+  if (formatId == null || formatId === undefined || formatId === 'null' || formatId === 'undefined') {
+    console.error('ID de formato es undefined o null:', formatId)
+    return
+  }
+  
   const formatIdNum = Number(formatId)
+  
+  // Validar que el ID sea un número válido
+  if (isNaN(formatIdNum) || formatIdNum <= 0) {
+    console.error('ID de formato inválido:', formatId, 'convertido a:', formatIdNum)
+    return
+  }
+  
   const checked = event.target.checked
   
   // Asegurar que formatIds sea un array y crear una copia para reactividad
@@ -477,47 +579,35 @@ const handleFormatChange = (event, formatId) => {
     newResource.value.formatIds = []
   }
   
-  // Crear una nueva copia del array para asegurar reactividad
+  // Filtrar valores inválidos y crear una nueva copia del array
   const currentIds = [...newResource.value.formatIds]
+    .map(id => Number(id))
+    .filter(id => !isNaN(id) && id > 0)
   
   if (checked) {
     // Agregar el formato solo si no está ya en la lista
     if (!currentIds.includes(formatIdNum)) {
       currentIds.push(formatIdNum)
+      console.log('Formato agregado:', formatIdNum, 'Lista actual:', currentIds)
     }
   } else {
     // Remover el formato de la lista
     const index = currentIds.indexOf(formatIdNum)
     if (index > -1) {
       currentIds.splice(index, 1)
+      console.log('Formato removido:', formatIdNum, 'Lista actual:', currentIds)
     }
   }
   
-  // Actualizar el array con la nueva copia
+  // Actualizar el array con la nueva copia (solo números válidos)
   newResource.value.formatIds = currentIds
   
-  // Validar que al menos un formato esté seleccionado
-  validateFormats()
-}
-
-const validateFormats = () => {
-  // Validar que al menos un formato esté seleccionado
-  if (!newResource.value.formatIds || newResource.value.formatIds.length === 0) {
-    errorMsg.value = 'Debes seleccionar al menos un formato.'
-  } else {
-    errorMsg.value = ''
-  }
+  console.log('formatIds actualizado:', newResource.value.formatIds)
 }
 
 const handleSubmit = async () => {
   errorMsg.value = ''
   successMsg.value = ''
-  
-  // Validar que al menos un formato esté seleccionado
-  if (!newResource.value.formatIds || newResource.value.formatIds.length === 0) {
-    errorMsg.value = 'Debes seleccionar al menos un formato.'
-    return
-  }
   
   // Validar campos requeridos
   if (!newResource.value.title || !newResource.value.title.trim()) {
@@ -525,27 +615,81 @@ const handleSubmit = async () => {
     return
   }
   
-  if (!newResource.value.link || !newResource.value.link.trim()) {
-    errorMsg.value = 'El enlace es obligatorio.'
-    return
+  // El enlace es opcional, pero si se proporciona debe ser válido
+  if (newResource.value.link && newResource.value.link.trim()) {
+    const link = newResource.value.link.trim()
+    // Validar formato básico de URL
+    if (!link.startsWith('http://') && !link.startsWith('https://') && !link.startsWith('www.')) {
+      // Si no tiene protocolo, agregarlo automáticamente
+      newResource.value.link = 'https://' + link
+    }
   }
   
   loading.value = true
 
   try {
-    // Preparar el payload según el DTO del backend
-    // Asegurar que formatIds sea un array de números
-    const formatIds = Array.isArray(newResource.value.formatIds) 
-      ? newResource.value.formatIds.map(id => Number(id))
-      : []
+    // Verificar que el usuario tenga el rol de administrador
+    const userRole = getUserRole()
+    const token = localStorage.getItem('jwtToken')
     
-    const payload = {
-      title: newResource.value.title.trim(),
-      description: newResource.value.description?.trim() || null,
-      link: newResource.value.link.trim(),
-      formatIds: formatIds.length > 0 ? formatIds : null,
-      image: newResource.value.image || null
+    console.log('Verificación de permisos:', {
+      userRole,
+      isAdmin: isAdmin.value,
+      hasToken: !!token
+    })
+    
+    if (!isAdmin.value) {
+      errorMsg.value = 'Solo los administradores pueden agregar o modificar recursos. Tu rol actual es: ' + (userRole || 'No definido')
+      loading.value = false
+      return
     }
+    
+    if (!token) {
+      errorMsg.value = 'No hay sesión activa. Por favor, inicia sesión nuevamente.'
+      loading.value = false
+      return
+    }
+    
+           // Preparar el payload según el DTO del backend
+           // Asegurar que formatIds sea un array de números válidos (filtrar NaN y valores inválidos)
+           let formatIds = []
+           if (Array.isArray(newResource.value.formatIds) && newResource.value.formatIds.length > 0) {
+             formatIds = newResource.value.formatIds
+               .map(id => {
+                 const numId = Number(id)
+                 return isNaN(numId) ? null : numId
+               })
+               .filter(id => id !== null && id > 0) // Filtrar null, NaN y valores <= 0
+           }
+           
+           const payload = {
+             title: newResource.value.title.trim(),
+             description: newResource.value.description?.trim() || null,
+             formatIds: formatIds.length > 0 ? formatIds : []
+           }
+    
+    // Guardar el enlace si existe, de lo contrario enviar null
+    if (newResource.value.link && newResource.value.link.trim()) {
+      let linkValue = newResource.value.link.trim()
+      // Asegurar que tenga protocolo si no lo tiene
+      if (!linkValue.startsWith('http://') && !linkValue.startsWith('https://')) {
+        linkValue = 'https://' + linkValue
+      }
+      payload.link = linkValue
+    } else {
+      // Si no hay enlace, enviar null (el enlace es opcional)
+      payload.link = null
+    }
+    
+    // Solo incluir imagen si se seleccionó una nueva
+    // Si estamos editando y no hay nueva imagen, no incluimos el campo para mantener la existente
+    if (newResource.value.image) {
+      payload.image = newResource.value.image
+    } else if (!editingResource.value) {
+      // Si es creación y no hay imagen, enviar null
+      payload.image = null
+    }
+    // Si es edición y no hay nueva imagen, no incluimos el campo (el backend mantendrá la existente)
 
     console.log('Enviando payload:', { ...payload, image: payload.image ? `[${payload.image.length} bytes]` : null })
 
@@ -580,11 +724,15 @@ const handleSubmit = async () => {
       message: error.message,
       response: error.response,
       status: error.response?.status,
-      data: error.response?.data
+      data: error.response?.data,
+      headers: error.response?.headers
     })
     
     if (error.response?.status === 403) {
-      errorMsg.value = 'No tienes permisos para agregar recursos. Verifica que seas administrador y que tu sesión esté activa.'
+      const errorMessage = error.response?.data || 'No tienes permisos para realizar esta acción.'
+      errorMsg.value = `Error 403: ${errorMessage}. Verifica que: 1) Tu rol sea ADMIN, 2) Tu sesión esté activa, 3) Tu token sea válido.`
+    } else if (error.response?.status === 401) {
+      errorMsg.value = 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.'
     } else {
       errorMsg.value = error.response?.data?.message || error.response?.data || error.message || 'Error al agregar el recurso.'
     }
@@ -852,6 +1000,24 @@ const handleSubmit = async () => {
   font-size: 0.85rem;
   color: #6b7280;
   margin: 0.25rem 0 0 0;
+}
+
+.current-image-preview,
+.new-image-preview {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 6px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
 }
 
 .hint {

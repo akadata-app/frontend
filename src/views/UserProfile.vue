@@ -27,15 +27,20 @@
 
           <div class="form-group">
             <label>Rol</label>
-            <input 
+            <select 
               v-model="form.role" 
-              type="text" 
-              class="form-input" 
-              disabled
-              :placeholder="form.role || 'No asignado'"
-            />
+              class="form-input form-select"
+            >
+              <option value="" disabled>Selecciona un rol</option>
+              <option v-for="roleOption in availableRoles" :key="roleOption" :value="roleOption">
+                {{ formatRoleName(roleOption) }}
+              </option>
+            </select>
             <p class="role-description">
               {{ roleDisplay }}
+            </p>
+            <p class="role-hint">
+              Puedes cambiar tu rol en cualquier momento. Los cambios se aplicarán inmediatamente.
             </p>
           </div>
         </div>
@@ -60,16 +65,33 @@
         </div>
 
         <div class="form-section">
-          <h3 class="section-title">Cambiar contraseña</h3>
+          <h3 class="section-title">Seguridad</h3>
           
           <div class="form-group">
-            <label>Nueva contraseña</label>
-            <input type="password" v-model="form.newPassword" class="form-input" placeholder="Dejar vacío para no cambiar" />
+            <label>Contraseña actual <span class="required">*</span></label>
+            <input 
+              type="password" 
+              v-model="form.currentPassword" 
+              required 
+              class="form-input" 
+              placeholder="Ingresa tu contraseña actual para confirmar los cambios"
+            />
+            <p class="field-hint">
+              Se requiere tu contraseña actual para actualizar cualquier información del perfil.
+            </p>
           </div>
 
           <div class="form-group">
-            <label>Contraseña actual <span class="required">*</span></label>
-            <input type="password" v-model="form.currentPassword" required class="form-input" placeholder="Ingresa tu contraseña actual" />
+            <label>Nueva contraseña</label>
+            <input 
+              type="password" 
+              v-model="form.newPassword" 
+              class="form-input" 
+              placeholder="Dejar vacío para no cambiar la contraseña"
+            />
+            <p class="field-hint">
+              Solo completa este campo si deseas cambiar tu contraseña.
+            </p>
           </div>
         </div>
 
@@ -109,6 +131,26 @@ const form = ref({
 const successMsg = ref('')
 const errorMsg = ref('')
 
+// Computed para obtener roles disponibles
+const availableRoles = computed(() => {
+  if (roles.value && Array.isArray(roles.value) && roles.value.length > 0) {
+    return roles.value
+  }
+  // Roles por defecto si no se pueden cargar desde el servidor
+  return ['USER', 'ADMIN', 'ADMINISTRATOR']
+})
+
+// Función para formatear el nombre del rol para mostrar
+const formatRoleName = (role) => {
+  const roleUpper = (role || '').toUpperCase()
+  if (roleUpper === 'ADMIN' || roleUpper === 'ADMINISTRATOR') {
+    return '👑 Administrador'
+  } else if (roleUpper === 'USER') {
+    return '👤 Usuario'
+  }
+  return role || 'Sin rol'
+}
+
 // Computed para formatear el rol
 const roleDisplay = computed(() => {
   const role = form.value.role || getUserRole() || ''
@@ -138,7 +180,16 @@ onMounted(async () => {
       }
     }
     
-    roles.value = rolesRes.data
+    // Normalizar los roles recibidos del servidor
+    if (rolesRes.data && Array.isArray(rolesRes.data)) {
+      roles.value = rolesRes.data
+    } else if (rolesRes.data && typeof rolesRes.data === 'object') {
+      // Si viene como objeto, convertir a array
+      roles.value = Object.values(rolesRes.data)
+    } else {
+      // Roles por defecto si no se pueden obtener
+      roles.value = ['USER', 'ADMIN', 'ADMINISTRATOR']
+    }
   } catch (e) {
     errorMsg.value = "No se pudo cargar la información del usuario o los roles."
     // Intentar cargar el rol desde localStorage como fallback
@@ -152,14 +203,41 @@ onMounted(async () => {
 async function onSubmit() {
   errorMsg.value = ''
   successMsg.value = ''
+  
+  // Validar que se haya ingresado la contraseña actual
+  if (!form.value.currentPassword || form.value.currentPassword.trim() === '') {
+    errorMsg.value = 'Debes ingresar tu contraseña actual para actualizar el perfil.'
+    return
+  }
+  
   try {
     const oldEmail = user.value.email
+    const oldRole = user.value.role || localStorage.getItem('userRole')
     
-    // No enviar el rol en la actualización (el rol no se puede cambiar por el usuario)
-    const { role, ...updateData } = form.value
+    // Preparar los datos de actualización
+    const updateData = {
+      name: form.value.name,
+      nameSecond: form.value.nameSecond,
+      email: form.value.email,
+      organizationName: form.value.organizationName,
+      industry: form.value.industry,
+      industrySize: form.value.industrySize,
+      role: form.value.role,
+      currentPassword: form.value.currentPassword // Siempre requerido por el backend
+    }
+    
+    // Solo incluir nueva contraseña si se proporcionó
+    if (form.value.newPassword && form.value.newPassword.trim() !== '') {
+      updateData.newPassword = form.value.newPassword.trim()
+    }
+    
     await updateUserInfo(updateData)
     
-    if (form.value.email !== oldEmail) {
+    // Actualizar localStorage con el nuevo rol si cambió
+    if (updateData.role && updateData.role !== oldRole) {
+      localStorage.setItem('userRole', updateData.role)
+      successMsg.value = "Perfil actualizado correctamente. Tu rol ha sido cambiado."
+    } else if (form.value.email !== oldEmail) {
       successMsg.value = "Correo actualizado. Por favor, inicia sesión nuevamente."
       setTimeout(() => {
         localStorage.removeItem('jwtToken')
@@ -170,10 +248,33 @@ async function onSubmit() {
     } else {
       successMsg.value = "Perfil actualizado correctamente."
     }
+    
+    // Actualizar el objeto user con los nuevos datos
+    user.value = { ...user.value, ...updateData }
+    
+    // Limpiar campos de contraseña después de actualizar exitosamente
     form.value.newPassword = ''
     form.value.currentPassword = ''
+    
+    // Recargar la información del usuario para obtener los datos actualizados
+    try {
+      const userRes = await getUserInfo()
+      user.value = userRes.data
+      Object.assign(form.value, userRes.data)
+      form.value.currentPassword = ''
+      form.value.newPassword = ''
+    } catch (refreshError) {
+      console.warn('No se pudo recargar la información del usuario:', refreshError)
+    }
   } catch (e) {
-    errorMsg.value = e.response?.data || "Error al actualizar el perfil."
+    console.error('Error al actualizar perfil:', e)
+    if (e.response?.status === 403) {
+      errorMsg.value = e.response?.data?.message || e.response?.data || 'Contraseña actual incorrecta. Por favor, verifica tu contraseña.'
+    } else if (e.response?.status === 400) {
+      errorMsg.value = e.response?.data?.message || e.response?.data || 'Error en los datos proporcionados. Por favor, verifica la información.'
+    } else {
+      errorMsg.value = e.response?.data?.message || e.response?.data || "Error al actualizar el perfil. Por favor, intenta nuevamente."
+    }
   }
 }
 </script>
@@ -277,6 +378,19 @@ async function onSubmit() {
   cursor: not-allowed;
 }
 
+.form-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+}
+
+.form-select:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2356005b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+}
+
 .role-description {
   margin: 0.5rem 0 0 0;
   font-size: 0.85rem;
@@ -286,6 +400,23 @@ async function onSubmit() {
   background: #f3f4f6;
   border-radius: 4px;
   border-left: 3px solid #56005b;
+}
+
+.role-hint {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.8rem;
+  color: #059669;
+  font-style: italic;
+  padding: 0.5rem 0.75rem;
+  background: #d1fae5;
+  border-radius: 4px;
+}
+
+.field-hint {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-style: italic;
 }
 
 .success-message {

@@ -37,6 +37,11 @@
       <p class="resource-description" v-if="resource.description">
         {{ resource.description }}
       </p>
+      
+      <div v-if="hasValidLink" class="resource-link-hint">
+        <span class="link-icon">🔗</span>
+        <span class="link-text">Haz clic para abrir el recurso</span>
+      </div>
     </div>
   </div>
 </template>
@@ -63,24 +68,29 @@ const imageSrc = computed(() =>
     : `data:image/png;base64,${props.resource.image}`
 )
 
-const handleCardClick = (event) => {
-  // Solo abrir el enlace si no se hizo click en los botones de acción
-  if (!event.target.closest('.resource-actions')) {
-    openInNewTab(event)
-  }
-}
+const hasValidLink = computed(() => {
+  const link = props.resource.link
+  return link && link.trim() && link !== 'null' && link !== 'undefined'
+})
 
-const openInNewTab = (event) => {
-  // Prevenir la propagación del evento si se hace click en elementos interactivos
-  if (event) {
-    event.stopPropagation()
+const handleCardClick = (event) => {
+  // No hacer nada si el click fue en los botones de acción o en sus contenedores
+  if (event.target.closest('.resource-actions') || 
+      event.target.closest('.action-btn')) {
+    return
   }
   
-  if (props.resource.link) {
-    window.open(props.resource.link, '_blank', 'noopener,noreferrer')
-  } else {
-    console.warn('El recurso no tiene un enlace configurado')
+  // Abrir el enlace en una nueva pestaña si existe
+  const link = props.resource.link
+  if (link && link.trim() && link !== 'null' && link !== 'undefined') {
+    // Asegurar que el enlace tenga protocolo
+    let url = link.trim()
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url
+    }
+    window.open(url, '_blank', 'noopener,noreferrer')
   }
+  // Si no hay enlace, simplemente no hacer nada (no mostrar error)
 }
 
 const handleEdit = (event) => {
@@ -104,11 +114,14 @@ const handleDelete = (event) => {
   border: 1px solid #e5e7eb;
   overflow: hidden;
   font-family: 'Roboto', sans-serif;
-  transition: border-color 0.2s ease;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .resource-card:hover {
   border-color: #56005b;
+  box-shadow: 0 4px 12px rgba(86, 0, 91, 0.15);
+  transform: translateY(-2px);
 }
 
 .resource-image-wrapper {
@@ -166,6 +179,26 @@ const handleDelete = (event) => {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.resource-link-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #e5e7eb;
+  font-size: 0.75rem;
+  color: #56005b;
+  font-weight: 500;
+}
+
+.link-icon {
+  font-size: 0.875rem;
+}
+
+.link-text {
+  opacity: 0.8;
 }
 
 .resource-actions {

@@ -1,7 +1,9 @@
+// Importar axios después de que authService.js haya configurado los interceptores
 import axios from 'axios';
 
-const API_ROOT = (import.meta?.env?.VITE_API_URL || 'http://localhost:8080').replace(/\/+$/, '');
-const BASE_URL = `${API_ROOT}/api/formats`;
+const API_ROOT = (import.meta?.env?.VITE_API_URL || '').replace(/\/+$/, '');
+const API_URL = API_ROOT ? `${API_ROOT}/api` : '/api';
+const BASE_URL = `${API_URL}/formats`;
 
 export default {
   // GET /api/formats
