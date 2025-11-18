@@ -450,16 +450,11 @@ const featuredResources = computed(() => {
 })
 
 const filteredResources = computed(() => {
-  // IDs específicos que queremos mostrar
-  const allowedIds = [7, 8, 9]
-  
   const filtered = resources.value.filter((resource) => {
-    // Solo mostrar recursos con IDs permitidos
-    if (!resource || !resource.id || !allowedIds.includes(resource.id)) {
+    // Filtrar recursos válidos
+    if (!resource || !resource.id || !resource.title) {
       return false
     }
-    
-    if (!resource.title) return false
 
     const matchFormat =
       filter.value === 'Todos' ||
