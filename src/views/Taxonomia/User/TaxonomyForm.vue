@@ -428,100 +428,528 @@ export default {
         this.form.id,
         responseObj
       ).then(() => {
-        this.$router.push({ name: 'FormsList' });
+        // Guardar los datos del reporte en localStorage para el dashboard
+        localStorage.setItem(`taxonomyReport_${this.form.id}`, JSON.stringify({
+          formId: this.form.id,
+          formName: this.form.title,
+          layers: responseObj.layers
+        }));
+        
+        // Generar PDF
+        generatePDF(responseObj);
+        
+        // Redirigir al dashboard después de un breve delay
+        setTimeout(() => {
+          this.$router.push({ 
+            name: 'TaxonomyDashboard', 
+            params: { formId: this.form.id } 
+          });
+        }, 1000);
       }).catch(error => {
         console.error("Erreur lors de l'envoi du formulaire:", error);
+        alert('Error al enviar el formulario. Por favor, intente nuevamente.');
       });
       
       console.log("ENREGISTREMENT DES CHOIX");
       console.log(responseObj);
-      
-      generatePDF(responseObj);
     }
   }
 };
 
-// Función para generar PDF
+// Función para generar PDF mejorado y visualmente atractivo
 function generatePDF(jsonData) {
   console.log("Datos para PDF:", JSON.stringify(jsonData, null, 2));
   
-  let tableBody = [
-    [
-      { text: "Layer", style: "tableHeader" },
-      { text: "Dimension", style: "tableHeader" },
-      { text: "Features", style: "tableHeader", colSpan: 4, alignment: "center" },
-      {}, {}, {}
-    ]
-  ];
-
+  // Calcular estadísticas generales
+  const totalLayers = jsonData.layers.length;
+  let totalDimensions = 0;
+  let selectedDimensions = 0;
+  let totalFeatures = 0;
+  let selectedFeatures = 0;
+  
   jsonData.layers.forEach(layer => {
-    const layerRowSpan = layer.dimensions.length;
-
-    layer.dimensions.forEach((dimension, dimIndex) => {
-      const row = [];
-
-      if (dimIndex === 0) {
-        row.push({
-          text: layer.layerName,
-          rowSpan: layerRowSpan,
-          fillColor: "#ffffff"
-        });
-      } else {
-        row.push({});
+    layer.dimensions.forEach(dimension => {
+      totalDimensions++;
+      if (dimension.isSelected === 1) {
+        selectedDimensions++;
       }
-
-      row.push({
-        text: dimension.dimensionName || `Dimension ${dimension.dimensionId}`,
-        fillColor: dimension.isSelected ? "#c8e6c9" : "#ffcdd2"
-      });
-
-      const features = (dimension.features || []);
-
-      for (let i = 0; i < 4; i++) {
-        let feature = features[i];
-        let cellColor = "#ffffff";
-
-        if (dimension.isSelected === 0) {
-          cellColor = "#ffcdd2";
-        } else if (dimension.isSelected === 1) {
-          if (feature && feature.selected === 1) {
-            cellColor = "#c8e6c9";
-          }
+      dimension.features.forEach(feature => {
+        totalFeatures++;
+        if (feature.selected === 1) {
+          selectedFeatures++;
         }
-
-        row.push({
-          text: feature ? (feature.name || `Feature ${feature.id}`) : "",
-          fillColor: cellColor
-        });
-      }
-
-      tableBody.push(row);
+      });
     });
   });
-
-  const docDefinition = {
-    content: [
-      { text: jsonData.formName, style: "header" },
+  
+  const dimensionPercentage = totalDimensions > 0 ? Math.round((selectedDimensions / totalDimensions) * 100) : 0;
+  const featurePercentage = totalFeatures > 0 ? Math.round((selectedFeatures / totalFeatures) * 100) : 0;
+  
+  // Contenido del PDF
+  const content = [];
+  
+  // Encabezado mejorado con gradiente visual
+  content.push({
+    stack: [
       {
-        table: {
-          headerRows: 1,
-          widths: ["20%", "20%", "15%", "15%", "15%", "15%"],
-          body: tableBody
-        }
-      }
-    ],
-    styles: {
-      header: {
-        fontSize: 18,
-        bold: true,
+        text: '📊 REPORTE DE TAXONOMÍA',
+        style: 'superHeader',
         margin: [0, 0, 0, 10]
       },
-      tableHeader: {
-        bold: true,
-        fontSize: 13,
-        color: "black",
-        fillColor: "#eeeeee"
+      {
+        text: jsonData.formName || 'Formulario de Taxonomía',
+        style: 'mainTitle',
+        margin: [0, 0, 0, 20]
       }
+    ],
+    background: 'linear',
+    margin: [0, 0, 0, 30]
+  });
+  
+  // Tarjetas de estadísticas generales mejoradas
+  content.push({
+    columns: [
+      {
+        stack: [
+          { text: '📚', style: 'statIcon', alignment: 'center' },
+          { text: totalLayers, style: 'statNumber' },
+          { text: 'Capas', style: 'statLabel' }
+        ],
+        fillColor: '#56005b',
+        color: 'white',
+        margin: [0, 0, 5, 0],
+        borderRadius: 8
+      },
+      {
+        stack: [
+          { text: '📊', style: 'statIcon', alignment: 'center' },
+          { text: `${selectedDimensions}/${totalDimensions}`, style: 'statNumber' },
+          { text: 'Dimensiones', style: 'statLabel' }
+        ],
+        fillColor: '#6d8e5a',
+        color: 'white',
+        margin: [5, 0, 5, 0],
+        borderRadius: 8
+      },
+      {
+        stack: [
+          { text: '✨', style: 'statIcon', alignment: 'center' },
+          { text: `${selectedFeatures}/${totalFeatures}`, style: 'statNumber' },
+          { text: 'Características', style: 'statLabel' }
+        ],
+        fillColor: '#ffc700',
+        color: '#1c1c1c',
+        margin: [5, 0, 0, 0],
+        borderRadius: 8
+      }
+    ],
+    margin: [0, 0, 0, 30],
+    columnGap: 10
+  });
+  
+  // Barras de progreso visuales mejoradas con iconos
+  content.push({
+    stack: [
+      {
+        text: [
+          { text: '📈 ', fontSize: 16 },
+          { text: 'Progreso General', style: 'sectionTitleText' }
+        ],
+        style: 'sectionTitle',
+        margin: [0, 0, 0, 15]
+      },
+      {
+        table: {
+          widths: ['25%', '*', '15%'],
+          body: [
+            [
+              { 
+                text: [
+                  { text: '📊 ', fontSize: 12 },
+                  { text: 'Dimensiones', style: 'progressLabel' }
+                ],
+                border: [false, false, false, false] 
+              },
+              {
+                stack: [
+                  {
+                    table: {
+                      widths: [dimensionPercentage + '%', (100 - dimensionPercentage) + '%'],
+                      body: [[
+                        { text: '', fillColor: '#6d8e5a', border: [false, false, false, false], margin: [0, 3, 0, 3] },
+                        { text: '', fillColor: '#e5e7eb', border: [false, false, false, false], margin: [0, 3, 0, 3] }
+                      ]]
+                    },
+                    layout: 'noBorders'
+                  }
+                ],
+                border: [false, false, false, false],
+                margin: [5, 5, 5, 5]
+              },
+              { text: `${dimensionPercentage}%`, style: 'progressValue', alignment: 'right', border: [false, false, false, false] }
+            ],
+            [
+              { 
+                text: [
+                  { text: '✨ ', fontSize: 12 },
+                  { text: 'Características', style: 'progressLabel' }
+                ],
+                border: [false, false, false, false] 
+              },
+              {
+                stack: [
+                  {
+                    table: {
+                      widths: [featurePercentage + '%', (100 - featurePercentage) + '%'],
+                      body: [[
+                        { text: '', fillColor: '#ffc700', border: [false, false, false, false], margin: [0, 3, 0, 3] },
+                        { text: '', fillColor: '#e5e7eb', border: [false, false, false, false], margin: [0, 3, 0, 3] }
+                      ]]
+                    },
+                    layout: 'noBorders'
+                  }
+                ],
+                border: [false, false, false, false],
+                margin: [5, 5, 5, 5]
+              },
+              { text: `${featurePercentage}%`, style: 'progressValue', alignment: 'right', border: [false, false, false, false] }
+            ]
+          ]
+        },
+        layout: 'noBorders',
+        margin: [0, 0, 0, 0]
+      }
+    ],
+    margin: [0, 0, 0, 30]
+  });
+  
+  // Detalle por capas con diseño mejorado
+  jsonData.layers.forEach((layer, layerIndex) => {
+    const layerDimensions = layer.dimensions.length;
+    const selectedLayerDimensions = layer.dimensions.filter(d => d.isSelected === 1).length;
+    const layerFeatures = layer.dimensions.reduce((sum, d) => sum + d.features.length, 0);
+    const selectedLayerFeatures = layer.dimensions.reduce((sum, d) => 
+      sum + d.features.filter(f => f.selected === 1).length, 0);
+    
+    // Encabezado de capa con estilo mejorado e iconos
+    content.push({
+      stack: [
+        {
+          columns: [
+            {
+              width: 50,
+              stack: [
+                {
+                  table: {
+                    widths: [50],
+                    body: [[
+                      {
+                        text: [
+                          { text: '📋 ', fontSize: 14 },
+                          { text: String(layerIndex + 1), fontSize: 18, bold: true }
+                        ],
+                        style: 'layerNumber',
+                        fillColor: '#56005b',
+                        color: 'white',
+                        alignment: 'center',
+                        margin: [8, 8, 8, 8]
+                      }
+                    ]]
+                  },
+                  layout: 'noBorders'
+                }
+              ]
+            },
+            {
+              width: '*',
+              stack: [
+                {
+                  text: layer.layerName,
+                  style: 'layerTitle'
+                },
+                {
+                  text: [
+                    { text: '📊 ', fontSize: 9 },
+                    { text: `${selectedLayerDimensions}/${layerDimensions} dimensiones`, fontSize: 10 },
+                    { text: ' • ', fontSize: 10 },
+                    { text: '✨ ', fontSize: 9 },
+                    { text: `${selectedLayerFeatures}/${layerFeatures} características`, fontSize: 10 }
+                  ],
+                  style: 'layerSubtitle',
+                  margin: [0, 5, 0, 0]
+                }
+              ],
+              margin: [10, 0, 0, 0]
+            }
+          ],
+          margin: [0, 0, 0, 15]
+        }
+      ],
+      margin: layerIndex > 0 ? [0, 20, 0, 0] : [0, 0, 0, 0]
+    });
+    
+    // Tabla de dimensiones mejorada con iconos
+    const dimensionTableBody = [
+      [
+        { text: [{ text: '📐 ', fontSize: 11 }, { text: 'Dimensión', fontSize: 11, bold: true }], style: 'dimTableHeader', fillColor: '#56005b', color: 'white' },
+        { text: [{ text: '⚡ ', fontSize: 11 }, { text: 'Estado', fontSize: 11, bold: true }], style: 'dimTableHeader', fillColor: '#56005b', color: 'white', alignment: 'center' },
+        { text: [{ text: '✨ ', fontSize: 11 }, { text: 'Características Seleccionadas', fontSize: 11, bold: true }], style: 'dimTableHeader', fillColor: '#56005b', color: 'white', colSpan: 2, alignment: 'center' },
+        {}
+      ]
+    ];
+    
+    layer.dimensions.forEach(dimension => {
+      const selectedCount = dimension.features.filter(f => f.selected === 1).length;
+      const totalCount = dimension.features.length;
+      const isSelected = dimension.isSelected === 1;
+      
+      const featuresList = dimension.features
+        .filter(f => f.selected === 1)
+        .map(f => f.name)
+        .join(', ') || 'Ninguna';
+      
+      dimensionTableBody.push([
+        {
+          text: [
+            { text: isSelected ? '✓ ' : '✗ ', fontSize: 10, bold: true, color: isSelected ? '#065f46' : '#991b1b' },
+            { text: dimension.dimensionName, fontSize: 10, bold: true, color: '#1f2937' }
+          ],
+          fillColor: isSelected ? '#f0f7ed' : '#fff5f5'
+        },
+        {
+          stack: [
+            {
+              text: [
+                { text: isSelected ? '✓ ' : '✗ ', fontSize: 9, bold: true },
+                { text: isSelected ? 'Activa' : 'Inactiva', fontSize: 9, bold: true }
+              ],
+              style: isSelected ? 'statusActive' : 'statusInactive',
+              alignment: 'center'
+            }
+          ],
+          fillColor: isSelected ? '#f0f7ed' : '#fff5f5'
+        },
+        {
+          text: [
+            { text: '✨ ', fontSize: 9 },
+            { text: `${selectedCount}/${totalCount}`, fontSize: 10, bold: true, color: '#1f2937' }
+          ],
+          fillColor: isSelected ? '#f0f7ed' : '#fff5f5',
+          alignment: 'center'
+        },
+        {
+          text: featuresList ? [
+            { text: '• ', fontSize: 7 },
+            { text: featuresList, fontSize: 8, color: '#4b5563' }
+          ] : 'Ninguna',
+          style: 'featureList',
+          fillColor: isSelected ? '#f0f7ed' : '#fff5f5',
+          fontSize: 8
+        }
+      ]);
+    });
+    
+    content.push({
+      table: {
+        headerRows: 1,
+        widths: ['30%', '15%', '15%', '40%'],
+        body: dimensionTableBody
+      },
+      layout: {
+        fillColor: function (rowIndex, node, columnIndex) {
+          return (rowIndex % 2 === 0) ? '#fafbfc' : '#ffffff';
+        }
+      },
+      margin: [0, 0, 0, 20]
+    });
+    
+    // Visualización de características seleccionadas por dimensión con iconos
+    layer.dimensions.forEach(dimension => {
+      if (dimension.isSelected === 1) {
+        const selectedFeats = dimension.features.filter(f => f.selected === 1);
+        if (selectedFeats.length > 0) {
+          content.push({
+            stack: [
+              {
+                text: [
+                  { text: '✓ ', fontSize: 12, bold: true, color: '#6d8e5a' },
+                  { text: dimension.dimensionName, fontSize: 12, bold: true, color: '#6d8e5a' }
+                ],
+                style: 'dimensionHeader',
+                margin: [0, 0, 0, 10]
+              },
+              {
+                columns: selectedFeats.map(feature => ({
+                  width: 'auto',
+                  text: [
+                    { text: '✨ ', fontSize: 8 },
+                    { text: feature.name, fontSize: 9 }
+                  ],
+                  style: 'featureTag',
+                  fillColor: '#d1fae5',
+                  color: '#065f46',
+                  margin: [0, 0, 5, 5]
+                })),
+                columnGap: 5
+              }
+            ],
+            margin: [20, 0, 0, 15]
+          });
+        }
+      }
+    });
+  });
+  
+  // Pie de página con fecha e icono
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('es-ES', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  
+  content.push({
+    text: [
+      { text: '📅 ', fontSize: 9 },
+      { text: `Generado el ${dateStr}`, fontSize: 9, italics: true, color: '#9ca3af' }
+    ],
+    style: 'footer',
+    margin: [0, 30, 0, 0],
+    alignment: 'center'
+  });
+  
+  const docDefinition = {
+    content: content,
+    styles: {
+      superHeader: {
+        fontSize: 14,
+        bold: true,
+        color: '#56005b',
+        alignment: 'center'
+      },
+      mainTitle: {
+        fontSize: 24,
+        bold: true,
+        color: '#1f2937',
+        alignment: 'center'
+      },
+      statIcon: {
+        fontSize: 24,
+        margin: [0, 0, 0, 5]
+      },
+      statCard: {
+        alignment: 'center',
+        margin: [0, 10, 0, 10],
+        padding: [15, 20, 15, 20]
+      },
+      statNumber: {
+        fontSize: 28,
+        bold: true,
+        alignment: 'center',
+        margin: [0, 5, 0, 0]
+      },
+      statLabel: {
+        fontSize: 12,
+        alignment: 'center',
+        margin: [0, 5, 0, 0]
+      },
+      sectionTitle: {
+        fontSize: 16,
+        bold: true,
+        color: '#1f2937',
+        margin: [0, 0, 0, 10]
+      },
+      sectionTitleText: {
+        fontSize: 16,
+        bold: true,
+        color: '#1f2937'
+      },
+      progressLabel: {
+        fontSize: 11,
+        color: '#4b5563'
+      },
+      progressValue: {
+        fontSize: 11,
+        bold: true,
+        color: '#1f2937'
+      },
+      layerNumber: {
+        fontSize: 18,
+        bold: true,
+        width: 40,
+        height: 40,
+        alignment: 'center',
+        margin: [0, 0, 0, 0]
+      },
+      layerTitle: {
+        fontSize: 18,
+        bold: true,
+        color: '#56005b'
+      },
+      layerSubtitle: {
+        fontSize: 10,
+        color: '#6b7280',
+        italics: true
+      },
+      dimTableHeader: {
+        fontSize: 11,
+        bold: true
+      },
+      dimName: {
+        fontSize: 10,
+        bold: true,
+        color: '#1f2937'
+      },
+      statusActive: {
+        fontSize: 9,
+        color: '#065f46',
+        bold: true,
+        background: '#d1fae5'
+      },
+      statusInactive: {
+        fontSize: 9,
+        color: '#991b1b',
+        bold: true,
+        background: '#fee2e2'
+      },
+      featureCount: {
+        fontSize: 10,
+        bold: true,
+        color: '#1f2937'
+      },
+      featureList: {
+        fontSize: 8,
+        color: '#4b5563'
+      },
+      dimensionHeader: {
+        fontSize: 12,
+        bold: true,
+        color: '#6d8e5a'
+      },
+      featureTag: {
+        fontSize: 9,
+        padding: [5, 8, 5, 8],
+        borderRadius: 5
+      },
+      footer: {
+        fontSize: 9,
+        color: '#9ca3af',
+        italics: true
+      }
+    },
+    defaultStyle: {
+      font: 'Roboto',
+      // Asegurar que los emojis se rendericen correctamente
+      unicode: true
+    },
+    pageMargins: [40, 60, 40, 60],
+    pageSize: 'A4',
+    info: {
+      title: jsonData.formName || 'Reporte de Taxonomía',
+      author: 'AKADATA',
+      subject: 'Reporte de evaluación de taxonomía'
     }
   };
 
@@ -530,7 +958,7 @@ function generatePDF(jsonData) {
     .replace(/\s+/g, "_")
     .replace(/[^\w]/g, "");
 
-  pdfMake.createPdf(docDefinition).download(`${titleFile}.pdf`);
+  pdfMake.createPdf(docDefinition).download(`${titleFile}_reporte.pdf`);
 }
 </script>
 

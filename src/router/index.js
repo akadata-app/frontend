@@ -49,6 +49,7 @@ const routes = [
   // Taxonomía - côté utilisateur
   { path: '/herramientas-evaluacion/taxonomy/forms', name: 'FormsList', component: TaxonomyFormList },
   { path: '/herramientas-evaluacion/taxonomy/forms/:id', name: 'FormPage', component: TaxonomyForm, props: true },
+  { path: '/herramientas-evaluacion/taxonomy/forms/:formId/reporte', name: 'TaxonomyDashboard', component: () => import('@/views/Taxonomia/User/TaxonomyDashboard.vue') },
 
   // Taxonomía - administration (routes existantes conservées)
   { path: '/Taxonomia/Administrator', name: 'TaxonomiaFormulario', component: TaxonomiaFormulario },
@@ -99,6 +100,7 @@ router.beforeEach((to, from, next) => {
   const protectedRoutes = [
     'FormsList',
     'FormPage',
+    'TaxonomyDashboard',
     'TaxonomiaFormulario',
     'Formulario',
     'FormularioMadurezAdmin',
