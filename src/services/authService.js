@@ -81,3 +81,27 @@ export function getUserRole() {
 export async function resetPassword(email) {
   return axios.post(`${API_URL}/user/reset-password`, { email })
 }
+
+export function getAllUsers() {
+  return axios.get(`${API_URL}/admin/users`)
+}
+
+export function changeUserRole(userId, newRole) {
+  return axios.put(`${API_URL}/admin/users/${userId}/role`, { role: newRole })
+}
+
+export default {
+  login,
+  register,
+  logout,
+  getToken,
+  authHeader,
+  getUserName,
+  getUserInfo,
+  updateUserInfo,
+  getUserRoles,
+  getUserRole,
+  resetPassword,
+  getAllUsers,
+  changeUserRole
+}

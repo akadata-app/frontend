@@ -26,6 +26,7 @@ import FormularioMadurez from '@/views/ModeloDeMadurez/Administrator/FormularioM
 import ModeloDeMadurezFormList from '@/views/ModeloDeMadurez/User/ModeloDeMadurezFormList.vue'
 import ModeloDeMadurezFormDomain from '@/views/ModeloDeMadurez/User/ModeloDeMadurezFormDomain.vue'
 import ModeloDeMadurezDashboard from '@/views/ModeloDeMadurez/User/ModeloDeMadurezDashboard.vue'
+import OrganizationManagement from '@/views/OrganizationManagement.vue'
 
 const routes = [
   // Accueil
@@ -81,6 +82,11 @@ const routes = [
     path: '/formulario-madurez',
     name: 'FormularioMadurez',
     component: () => import('@/views/ModeloDeMadurez/Administrator/FormularioMadurez.vue')
+  },
+  {
+    path: '/admin',
+    name: 'AdminCenter',
+    component: OrganizationManagement
   }
 ]
 
@@ -108,7 +114,8 @@ router.beforeEach((to, from, next) => {
     'ModeloDeMadurezFormDomain',
     'ModeloDeMadurezDashboard',
     'FormularioMadurez',
-    'UserProfile'
+    'UserProfile',
+    'AdminCenter'
   ]
   
   // Verificar si la ruta requiere autenticación

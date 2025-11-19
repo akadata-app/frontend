@@ -1,35 +1,48 @@
 <template>
   <div class="page-container">
     <div class="card-container">
-      <h1 class="title">Modelos de Madurez</h1>
+      <div class="page-header">
+        <h1 class="title">Modelos de Madurez</h1>
+        <p class="subtitle">Selecciona un modelo de madurez para comenzar tu evaluación</p>
+      </div>
 
-      <div v-if="loading" class="loading">Loading...</div>
-      <div v-if="error" class="error">{{ error }}</div>
+      <div v-if="loading" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Cargando modelos...</p>
+      </div>
+      
+      <div v-if="error" class="error-state">
+        <span class="error-icon">⚠</span>
+        <p>{{ error }}</p>
+      </div>
 
-      <div v-if="!loading && !error" class="forms-list">
+      <div v-if="!loading && !error && forms.length === 0" class="empty-state">
+        <span class="empty-icon">📊</span>
+        <p>No hay modelos de madurez disponibles en este momento</p>
+      </div>
+
+      <div v-if="!loading && !error && forms.length > 0" class="forms-list">
         <div
           v-for="form in forms"
           :key="form.id"
           class="form-item"
           @click="goToForm(form.id)"
         >
-          <h2>{{ form.title }}</h2>
-          <p class="description">{{ form.description || 'Sin descripción' }}</p>
-          <p class="target"><strong>Dirigido a:</strong> {{ form.target }}</p>
-          <p class="result"><strong>Resultado:</strong> {{ form.result }}</p>
-
-          <!-- Acciones de administrador: botón de reporte -->
-          <div v-if="isAdmin" class="admin-actions">
-            <button class="btn-admin" @click.stop="goToReport(form.id)">Ver reporte</button>
-            <button 
-              class="btn-download" 
-              @click.stop="downloadReport(form.id)"
-              :disabled="downloadingReports[form.id]"
-            >
-              <span v-if="downloadingReports[form.id]">Generando...</span>
-              <span v-else>📥 Descargar reporte</span>
-            </button>
+          <div class="form-icon">🪜</div>
+          <div class="form-content">
+            <h2>{{ form.title }}</h2>
+            <p class="description">{{ form.description || 'Sin descripción' }}</p>
+            <div class="form-meta">
+              <span class="meta-item"><strong>Dirigido a:</strong> {{ form.target }}</span>
+              <span class="meta-item"><strong>Resultado:</strong> {{ form.result }}</span>
+            </div>
           </div>
+          <div class="form-actions">
+            <a class="btn-view-report" @click.stop="goToReport(form.id)" title="Ver reporte">
+              Ver reporte
+            </a>
+          </div>
+          <div class="form-arrow">→</div>
         </div>
       </div>
     </div>
@@ -100,11 +113,9 @@ async function downloadReport(formId) {
     // Generar HTML del reporte
     let reportHTML = `
       <div style="max-width: 1200px; margin: 0 auto;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
-          <div>
-            <h6 style="color: #888888; font-size: 1.5rem; font-weight: 400; margin: 0;">Reporte del Modelo de Madurez</h6>
-            <h1 style="margin-top: 0; font-size: 2rem; font-weight: 700;">${report.formTitle || ''}</h1>
-          </div>
+        <div style="text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid #e5e7eb;">
+          <h6 style="color: #888888; font-size: 0.9rem; font-weight: 400; margin: 0 0 0.5rem 0; text-transform: uppercase; letter-spacing: 1px;">Reporte del Modelo de Madurez</h6>
+          <h1 style="color: #56005b; font-size: 2.5rem; font-weight: 700; margin: 0;">${report.formTitle || 'Sin título'}</h1>
         </div>
         
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 3rem;">
@@ -204,121 +215,268 @@ onMounted(() => {
 .page-container {
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background: #f7f7fa;
-  padding: 20px;
+  align-items: flex-start;
+  min-height: calc(100vh - 200px);
+  background: #ffffff;
+  padding: 2rem;
+  font-family: 'Roboto', sans-serif;
 }
 
 .card-container {
-  background: #fff;
-  padding: 32px 28px;
-  border-radius: 18px;
-  box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+  background: #ffffff;
+  padding: 2.5rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
   max-width: 900px;
   width: 100%;
 }
 
-.title {
-  color: #222;
+.page-header {
   text-align: center;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.title {
+  color: #56005b;
   font-size: 2rem;
-  margin-bottom: 24px;
   font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: #6b7280;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.loading-state,
+.error-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+  gap: 1rem;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #56005b;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-state p {
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.error-state {
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 1.5rem;
+}
+
+.error-icon {
+  font-size: 2rem;
+}
+
+.error-state p {
+  margin: 0;
+  font-weight: 500;
+}
+
+.empty-state {
+  color: #6b7280;
+}
+
+.empty-icon {
+  font-size: 3rem;
+}
+
+.empty-state p {
+  font-size: 1.1rem;
+  margin: 0;
 }
 
 .forms-list {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 1.25rem;
 }
 
 .form-item {
-  background: #fafbfc;
-  border-radius: 12px;
-  padding: 18px 20px;
-  cursor: pointer;
-  transition: box-shadow 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 1.5rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   border: 1px solid #e5e7eb;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  cursor: pointer;
 }
 
 .form-item:hover {
-  transform: translateY(-2px) scale(1.01);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-  border-color: #bdbdf7;
+  border-color: #56005b;
+  box-shadow: 0 2px 8px rgba(86, 0, 91, 0.1);
+}
+
+.form-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  border-radius: 6px;
+}
+
+.form-content {
+  flex: 1;
 }
 
 .form-item h2 {
-  font-size: 1.1rem;
-  color: #222;
-  margin-bottom: 6px;
-  font-weight: 500;
-}
-
-.form-item p {
-  font-size: 0.95rem;
-  color: #555;
+  font-size: 1.3rem;
+  color: #56005b;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
 }
 
 .description {
-  margin-top: 8px;
-  font-size: 0.9rem;
-  color: #444;
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin: 0 0 0.75rem 0;
+  line-height: 1.6;
 }
 
-.loading {
-  text-align: center;
-  color: #bbb;
-  font-size: 1.1rem;
-  margin: 30px 0;
+.form-meta {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
 }
 
-.error {
-  text-align: center;
-  color: #d9534f;
-  background: #fff0f0;
-  border: 1px solid #ffd6d6;
-  border-radius: 8px;
-  padding: 12px 0;
-  margin: 30px 0;
+.meta-item {
+  color: #6b7280;
 }
-.admin-actions {
-  margin-top: 10px;
+
+.meta-item strong {
+  color: #374151;
+  font-weight: 500;
+}
+
+.form-arrow {
+  font-size: 1.25rem;
+  color: #56005b;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.form-item:hover .form-arrow {
+  transform: translateX(4px);
+}
+
+.form-actions {
   display: flex;
   gap: 0.5rem;
-  justify-content: flex-end;
-  flex-wrap: wrap;
+  align-items: center;
+  flex-shrink: 0;
 }
 
-.btn-admin,
+.btn-view-report {
+  color: #56005b;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.btn-view-report:hover {
+  color: #7a007f;
+  text-decoration: underline;
+}
+
 .btn-download {
-  background: #32621c;
+  background: #56005b;
   color: #fff;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 400;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  white-space: nowrap;
+  justify-content: center;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.2s ease;
 }
 
-.btn-admin:hover:not(:disabled),
 .btn-download:hover:not(:disabled) {
-  background: #2a5318;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(50, 98, 28, 0.3);
+  background: #7a007f;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(86, 0, 91, 0.3);
 }
 
-.btn-download:disabled,
-.btn-admin:disabled {
+.btn-download:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-container {
+    padding: 1rem;
+  }
+  
+  .card-container {
+    padding: 2rem 1.5rem;
+  }
+  
+  .title {
+    font-size: 1.8rem;
+  }
+  
+  .form-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+  
+  .form-content {
+    width: 100%;
+  }
+  
+  .form-meta {
+    justify-content: center;
+  }
+  
+  .form-actions {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .form-arrow {
+    display: none;
+  }
 }
 </style>

@@ -86,7 +86,12 @@
           <div class="org-fields">
             <div class="form-group">
               <label for="orgName">Nombre de organización</label>
-              <input type="text" id="orgName" v-model="form.orgName" class="form-input" />
+              <select id="orgName" v-model="form.orgName" class="form-input form-select">
+                <option value="">Selecciona una organización</option>
+                <option v-for="org in organizations" :key="org.id" :value="org.name">
+                  {{ org.name }}
+                </option>
+              </select>
             </div>
             
             <div class="form-group">
@@ -117,8 +122,11 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { register } from '@/services/authService.js'
+import organizationService from '@/services/organizationService'
+
+const organizations = ref([])
 
 const form = reactive({
   primerNombre: '',
@@ -138,6 +146,15 @@ const form = reactive({
 const registrationSuccess = ref(false)
 const errorMsg = ref('')
 const loading = ref(false)
+
+onMounted(async () => {
+  try {
+    const orgsRes = await organizationService.getAll()
+    organizations.value = orgsRes.data
+  } catch (error) {
+    console.error('Error al cargar organizaciones:', error)
+  }
+})
 
 async function submitForm() {
   errorMsg.value = ''

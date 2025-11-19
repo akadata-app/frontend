@@ -253,6 +253,11 @@ export default {
   font-size: 1.25rem;
   color: #56005b;
   flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.form-item:hover .form-arrow {
+  transform: translateX(4px);
 }
 
 /* Responsive */

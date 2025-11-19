@@ -9,39 +9,73 @@
       <form @submit.prevent="onSubmit" class="profile-form">
         <div class="form-section">
           <h3 class="section-title">Información personal</h3>
-          
-          <div class="form-group">
-            <label>Primer nombre</label>
-            <input v-model="form.name" class="form-input" />
-          </div>
+          <div class="personal-fields">
+            <div class="form-group">
+              <label>Primer nombre *</label>
+              <input v-model="form.primerNombre" required class="form-input" />
+            </div>
 
-          <div class="form-group">
-            <label>Segundo nombre</label>
-            <input v-model="form.nameSecond" class="form-input" />
-          </div>
+            <div class="form-group">
+              <label>Segundo nombre</label>
+              <input v-model="form.segundoNombre" class="form-input" />
+            </div>
 
-          <div class="form-group">
-            <label>Correo electrónico</label>
-            <input v-model="form.email" type="email" class="form-input" />
+            <div class="form-group">
+              <label>Primer apellido *</label>
+              <input v-model="form.primerApellido" required class="form-input" />
+            </div>
+
+            <div class="form-group">
+              <label>Segundo apellido</label>
+              <input v-model="form.segundoApellido" class="form-input" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3 class="section-title">Información de cuenta</h3>
+          <div class="account-fields">
+            <div class="form-group">
+              <label>Correo electrónico *</label>
+              <input v-model="form.email" type="email" required class="form-input" />
+            </div>
+
+            <div class="form-group">
+              <label>Rol de usuario</label>
+              <input 
+                :value="form.role === 'ADMIN' ? 'Administrador' : 'Usuario'" 
+                disabled 
+                class="form-input" 
+              />
+              <p class="field-hint">
+                El rol de usuario solo puede ser modificado por un administrador desde el Centro de Administración.
+              </p>
+            </div>
           </div>
         </div>
 
         <div class="form-section">
           <h3 class="section-title">Información organizacional</h3>
-          
-          <div class="form-group">
-            <label>Organización</label>
-            <input v-model="form.organizationName" class="form-input" />
-          </div>
+          <div class="org-fields">
+            <div class="form-group">
+              <label>Nombre de organización</label>
+              <select v-model="form.organizationName" class="form-input form-select">
+                <option value="">Selecciona una organización</option>
+                <option v-for="org in organizations" :key="org.id" :value="org.name">
+                  {{ org.name }}
+                </option>
+              </select>
+            </div>
 
-          <div class="form-group">
-            <label>Tipo de organización</label>
-            <input v-model="form.industry" class="form-input" />
-          </div>
+            <div class="form-group">
+              <label>Tipo de organización</label>
+              <input v-model="form.industry" class="form-input" />
+            </div>
 
-          <div class="form-group">
-            <label>Tamaño de la organización</label>
-            <input v-model="form.industrySize" class="form-input" />
+            <div class="form-group">
+              <label>Tamaño de la organización</label>
+              <input v-model="form.industrySize" class="form-input" />
+            </div>
           </div>
         </div>
 
@@ -95,15 +129,20 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getUserInfo, updateUserInfo } from '@/services/authService.js'
+import organizationService from '@/services/organizationService'
 
 const user = ref(null)
+const organizations = ref([])
 const form = ref({
-  name: '',
-  nameSecond: '',
+  primerNombre: '',
+  segundoNombre: '',
+  primerApellido: '',
+  segundoApellido: '',
   email: '',
   organizationName: '',
   industry: '',
   industrySize: '',
+  role: 'USER',
   newPassword: '',
   currentPassword: ''
 })
@@ -114,7 +153,28 @@ onMounted(async () => {
   try {
     const userRes = await getUserInfo()
     user.value = userRes.data
-    Object.assign(form.value, userRes.data)
+    
+    // Mapear los datos del backend al formato del formulario
+    const nameParts = (userRes.data.name || '').split(' ')
+    const nameSecondParts = (userRes.data.nameSecond || '').split(' ')
+    
+    form.value = {
+      primerNombre: nameParts[0] || '',
+      primerApellido: nameParts[1] || '',
+      segundoNombre: nameSecondParts[0] || '',
+      segundoApellido: nameSecondParts[1] || '',
+      email: userRes.data.email || '',
+      organizationName: userRes.data.organizationName || '',
+      industry: userRes.data.industry || '',
+      industrySize: userRes.data.industrySize || '',
+      role: userRes.data.role || 'USER',
+      newPassword: '',
+      currentPassword: ''
+    }
+    
+    // Cargar organizaciones
+    const orgsRes = await organizationService.getAll()
+    organizations.value = orgsRes.data
   } catch (e) {
     errorMsg.value = "No se pudo cargar la información del usuario."
   }
@@ -133,10 +193,10 @@ async function onSubmit() {
   try {
     const oldEmail = user.value.email
     
-    // Preparar los datos de actualización (sin incluir el rol)
+    // Preparar los datos de actualización
     const updateData = {
-      name: form.value.name,
-      nameSecond: form.value.nameSecond,
+      name: `${form.value.primerNombre} ${form.value.primerApellido}`.trim(),
+      nameSecond: `${form.value.segundoNombre} ${form.value.segundoApellido}`.trim(),
       email: form.value.email,
       organizationName: form.value.organizationName,
       industry: form.value.industry,
@@ -163,9 +223,6 @@ async function onSubmit() {
       successMsg.value = "Perfil actualizado correctamente."
     }
     
-    // Actualizar el objeto user con los nuevos datos
-    user.value = { ...user.value, ...updateData }
-    
     // Limpiar campos de contraseña después de actualizar exitosamente
     form.value.newPassword = ''
     form.value.currentPassword = ''
@@ -174,9 +231,24 @@ async function onSubmit() {
     try {
       const userRes = await getUserInfo()
       user.value = userRes.data
-      Object.assign(form.value, userRes.data)
-      form.value.currentPassword = ''
-      form.value.newPassword = ''
+      
+      // Mapear los datos del backend al formato del formulario
+      const nameParts = (userRes.data.name || '').split(' ')
+      const nameSecondParts = (userRes.data.nameSecond || '').split(' ')
+      
+      form.value = {
+        primerNombre: nameParts[0] || '',
+        primerApellido: nameParts[1] || '',
+        segundoNombre: nameSecondParts[0] || '',
+        segundoApellido: nameSecondParts[1] || '',
+        email: userRes.data.email || '',
+        organizationName: userRes.data.organizationName || '',
+        industry: userRes.data.industry || '',
+        industrySize: userRes.data.industrySize || '',
+        role: userRes.data.role || 'USER',
+        newPassword: '',
+        currentPassword: ''
+      }
     } catch (refreshError) {
       console.warn('No se pudo recargar la información del usuario:', refreshError)
     }
@@ -244,9 +316,22 @@ async function onSubmit() {
   font-size: 1.1rem;
   font-weight: 600;
   color: #56005b;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1.25rem;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid #e5e7eb;
+}
+
+.personal-fields,
+.account-fields {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.org-fields {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
 }
 
 .form-group {
@@ -344,6 +429,13 @@ async function onSubmit() {
   font-size: 1.2rem;
 }
 
+.field-hint {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
 .submit-button {
   width: 100%;
   padding: 0.875rem 2rem;
@@ -364,6 +456,17 @@ async function onSubmit() {
 }
 
 /* Responsive */
+@media (max-width: 1024px) {
+  .personal-fields,
+  .account-fields {
+    grid-template-columns: 1fr;
+  }
+  
+  .org-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
   .profile-card {
     padding: 2rem 1.5rem;
@@ -371,6 +474,12 @@ async function onSubmit() {
   
   .profile-header h2 {
     font-size: 1.6rem;
+  }
+  
+  .personal-fields,
+  .account-fields,
+  .org-fields {
+    grid-template-columns: 1fr;
   }
 }
 </style>

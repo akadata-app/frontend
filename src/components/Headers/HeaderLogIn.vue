@@ -17,12 +17,16 @@
         <li><a href="#" @click.prevent="onOpenRessources">Recursos abiertos</a></li>
         <li><a href="#" @click.prevent="onHerramientasEvaluacion">Herramientas</a></li>
         <li><a href="#" @click.prevent="onOpenConocenos">Conócenos</a></li>
-        <li><a @click.prevent="onOpenProfile" href="#">Mi perfil</a></li>
+        <li v-if="isAdmin" class="admin-item">
+          <a href="#" @click.prevent="onOpenAdminCenter" class="admin-link">
+            ⚙️ Administración
+          </a>
+        </li>
       </ul>
     </nav>
 
     <div class="right-section">
-      <span class="user-button">{{ userName }}</span>
+      <span class="user-button" @click="onOpenProfile">{{ userName }}</span>
       <a href="#" class="logout-button" @click.prevent="onLogout">Cerrar sesión</a>
       <button class="menu-toggle" aria-label="Abrir menú">
         <img :src="menuIcon" alt="Icono menú" class="menu-icon" />
@@ -35,14 +39,17 @@
 import logoUdeA from '@/assets/img/logosimbolo-horizontal-png.png'
 import menuIcon from '@/assets/img/menu.png'
 import { useRouter } from 'vue-router'
-import { logout, getUserName } from '@/services/authService.js'
-import { ref, onMounted } from 'vue'
+import { logout, getUserName, getUserRole } from '@/services/authService.js'
+import { ref, onMounted, computed } from 'vue'
 
 const router = useRouter()
 const userName = ref('')
+const userRole = ref('')
+const isAdmin = computed(() => userRole.value === 'ADMIN')
 
 onMounted(() => {
   userName.value = getUserName() || 'Usuario'
+  userRole.value = getUserRole() || ''
 })
 
 function onLogout() {
@@ -68,6 +75,10 @@ function onHerramientasEvaluacion() {
 
 function onOpenProfile() {
   router.push({ name: 'UserProfile' })
+}
+
+function onOpenAdminCenter() {
+  router.push({ name: 'AdminCenter' })
 }
 </script>
 
@@ -140,6 +151,12 @@ function onOpenProfile() {
   border-radius: 6px;
   font-weight: 500;
   font-family: 'Roboto', sans-serif;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.user-button:hover {
+  background-color: #e2a100;
 }
 
 .logout-button {
@@ -168,5 +185,19 @@ function onOpenProfile() {
   width: 24px;
   height: 24px;
   filter: brightness(100);
+}
+
+.admin-item {
+  position: relative;
+}
+
+.admin-link {
+  color: #f9b115 !important;
+  font-weight: 500 !important;
+}
+
+.admin-link:hover {
+  opacity: 1 !important;
+  text-decoration: underline;
 }
 </style>

@@ -63,5 +63,25 @@ export default {
   },
   deleteKda (id) {
     return axios.delete(`${API_ROOT}${KDA_BASE}/${id}`);
+  },
+  /* ===================== REPORTS ===================== */
+  getDashboard (formId, params = {}) {
+    // params: { organization?: string, userId?: number }
+    const query = new URLSearchParams()
+    if (params.organization) query.append('organization', params.organization)
+    if (params.userId) query.append('userId', params.userId)
+    const qs = query.toString() ? `?${query.toString()}` : ''
+    return axios.get(`${API_ROOT}${FORM_BASE}/report/${formId}/dashboard${qs}`)
+  },
+  getDashboardPerUser (formId, organization) {
+    const qs = organization ? `?organization=${encodeURIComponent(organization)}` : ''
+    return axios.get(`${API_ROOT}${FORM_BASE}/report/${formId}/by-user${qs}`)
+  },
+  getOrganizations (formId) {
+    return axios.get(`${API_ROOT}${FORM_BASE}/report/${formId}/organizations`)
+  },
+  getUsers (formId, organization) {
+    const qs = organization ? `?organization=${encodeURIComponent(organization)}` : ''
+    return axios.get(`${API_ROOT}${FORM_BASE}/report/${formId}/users${qs}`)
   }
 }

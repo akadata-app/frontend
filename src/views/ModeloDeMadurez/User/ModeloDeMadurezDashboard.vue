@@ -1,17 +1,54 @@
 <template>
   <div class="report-container">
-    <div v-if="report" class="report-header">
-      <div>
-        <h6>Reporte del Modelo de Madurez</h6>
-        <h1>{{ report.formTitle || '' }}</h1>
+    <div class="page-header">
+      <div class="header-content">
+        <div class="breadcrumb">Modelo de Madurez</div>
+        <h1 class="page-title">{{ report?.formTitle || 'Cargando...' }}</h1>
+        <p v-if="!isAdmin" class="user-info-badge">
+          Mis respuestas
+        </p>
       </div>
-      <button @click="downloadPdf" class="download-btn" :disabled="downloading">
-        <span v-if="downloading">Generando PDF...</span>
-        <span v-else>📥 Descargar reporte</span>
-      </button>
+      <div class="header-actions">
+        <button @click="downloadPdf" class="btn-download" :disabled="downloading">
+          <span v-if="downloading">Descargando...</span>
+          <span v-else>Descargar reporte</span>
+        </button>
+      </div>
+    </div>
+
+    <div v-if="isAdmin" class="filters-section">
+      <div class="filters-container">
+        <div class="filter-group">
+          <label class="filter-label">Organización:</label>
+          <select v-model="selectedOrganization" @change="onOrgChange" class="filter-select">
+            <option value="">Todas las organizaciones</option>
+            <option v-for="org in organizations" :key="org" :value="org">{{ org }}</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-checkbox">
+            <input type="checkbox" v-model="perUserMode" @change="onOrgChange" />
+            <span>Mostrar por usuario</span>
+          </label>
+        </div>
+      </div>
     </div>
   <p v-if="!report">Cargando el reporte…</p>
     <div v-else>
+      <div v-if="isAdmin && perUserMode">
+        <h3>Respuestas por usuario</h3>
+        <div class="user-list">
+          <div v-for="u in userList" :key="u.userId" class="user-card">
+            <div class="user-info">
+              <strong>{{ u.userName || 'Sin nombre' }}</strong>
+              <div class="muted">{{ u.organizationName || 'Sin organización' }}</div>
+            </div>
+            <div>
+              <button @click="loadDashboard(u.userId)">Ver reporte</button>
+            </div>
+          </div>
+        </div>
+      </div>
       <!-- Tarjetas de métricas -->
       <div class="metrics-cards">
         <div class="metric-card">
@@ -62,6 +99,8 @@
 import { onMounted, ref, nextTick, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
+import MaturityModelService from '@/services/MaturityModelService'
+import { getUserRole } from '@/services/authService'
 import Chart from 'chart.js/auto'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
@@ -73,6 +112,13 @@ const report = ref(null)
 const charts = []
 const canvasRefs = ref({})
 const downloading = ref(false)
+const organizations = ref([])
+const selectedOrganization = ref('')
+const perUserMode = ref(false)
+const userList = ref([])
+const userRole = ref(getUserRole())
+const isAdmin = computed(() => userRole.value === 'ADMIN')
+const selectedUserName = ref(null)
 
 // Computed properties para las métricas
 const totalKdas = computed(() => {
@@ -242,13 +288,75 @@ function createCharts() {
 
 onMounted(async () => {
   try {
-    const { data } = await axios.get(`${API_ROOT}/api/maturity-models/report/${formId}/dashboard`)
-    console.log('Dashboard data received:', data)
-    report.value = data
+    if (isAdmin.value) {
+      // Admin: cargar dashboard general sin filtros
+      const { data } = await MaturityModelService.getDashboard(formId)
+      console.log('Dashboard data received:', data)
+      report.value = data
+
+      // Cargar organizaciones usando endpoint eficiente
+      const { data: orgs } = await MaturityModelService.getOrganizations(formId)
+      organizations.value = orgs
+
+      // Cargar usuarios usando endpoint eficiente
+      const { data: users } = await MaturityModelService.getUsers(formId)
+      userList.value = users
+    } else {
+      // Usuario normal: cargar solo sus propias respuestas (el backend filtrará automáticamente por el usuario autenticado)
+      const { data } = await MaturityModelService.getDashboard(formId, { userOnly: true })
+      console.log('Dashboard data received (user only):', data)
+      report.value = data
+    }
   } catch (error) {
     console.error('Error loading dashboard data:', error)
   }
 })
+
+function onOrgChange() {
+  // Limpiar el nombre de usuario seleccionado cuando cambian los filtros
+  selectedUserName.value = null
+  // Si estamos en modo por usuario, recargar listado filtrado, sino recargar dashboard
+  if (perUserMode.value) {
+    loadPerUserList()
+  } else {
+    loadDashboard()
+  }
+}
+
+async function loadDashboard(userId = null) {
+  try {
+    const params = {}
+    if (selectedOrganization.value) params.organization = selectedOrganization.value
+    if (userId) {
+      params.userId = userId
+      // Buscar el nombre del usuario en la lista
+      const user = userList.value.find(u => u.userId === userId)
+      if (user) {
+        // Guardar el nombre del usuario para mostrarlo en el PDF
+        selectedUserName.value = user.userName || 'Sin nombre'
+      }
+    } else {
+      selectedUserName.value = null
+    }
+    const { data } = await MaturityModelService.getDashboard(formId, params)
+    report.value = data
+    // limpiar charts and refs for re-render
+    canvasRefs.value = {}
+    charts.length = 0
+  } catch (err) {
+    console.error('Error cargando dashboard filtrado:', err)
+  }
+}
+
+async function loadPerUserList() {
+  try {
+    const org = selectedOrganization.value || undefined
+    const { data } = await MaturityModelService.getUsers(formId, org)
+    userList.value = data
+  } catch (err) {
+    console.error('Error cargando lista por usuario:', err)
+  }
+}
 
 // Watcher para crear los gráficos cuando tanto los datos como las refs estén disponibles
 watch([report, canvasRefs], async () => {
@@ -285,24 +393,51 @@ async function downloadPdf() {
   
   try {
     const pdf = new jsPDF('p', 'mm', 'a4')
-    let y = 10
+    let y = 15
     
-    // Agregar títulos
-    const reportHeader = document.querySelector('.report-header > div')
-    if (reportHeader) {
-      const headerCanvas = await html2canvas(reportHeader, { 
-        scale: 2,
-        useCORS: true,
-        logging: false
-      })
-      const headerImgData = headerCanvas.toDataURL('image/png')
-      const headerImgProps = pdf.getImageProperties(headerImgData)
-      const headerPdfWidth = pdf.internal.pageSize.getWidth() - 20
-      const headerPdfHeight = (headerImgProps.height * headerPdfWidth) / headerImgProps.width
-      
-      pdf.addImage(headerImgData, 'PNG', 10, y, headerPdfWidth, headerPdfHeight)
-      y += headerPdfHeight + 20
+    // Crear encabezado del reporte con título y filtros
+    const pageWidth = pdf.internal.pageSize.getWidth()
+    
+    // Subtítulo "Modelo de Madurez"
+    pdf.setFontSize(9)
+    pdf.setTextColor(136, 136, 136)
+    pdf.text('Modelo de Madurez', pageWidth / 2, y, { align: 'center' })
+    y += 8
+    
+    // Título del formulario
+    pdf.setFontSize(20)
+    pdf.setTextColor(86, 0, 91)
+    pdf.setFont(undefined, 'bold')
+    const title = report.value?.formTitle || 'Sin título'
+    pdf.text(title, pageWidth / 2, y, { align: 'center' })
+    y += 10
+    
+    // Información de filtros aplicados
+    pdf.setFontSize(10)
+    pdf.setTextColor(107, 114, 128)
+    pdf.setFont(undefined, 'normal')
+    
+    if (!isAdmin.value) {
+      // Usuario normal - mostrar "Mis respuestas"
+      pdf.text('Mis respuestas', pageWidth / 2, y, { align: 'center' })
+      y += 6
+    } else if (selectedOrganization.value || selectedUserName.value) {
+      // Admin con filtros aplicados
+      if (selectedOrganization.value) {
+        pdf.text(`Organización: ${selectedOrganization.value}`, pageWidth / 2, y, { align: 'center' })
+        y += 6
+      }
+      if (selectedUserName.value) {
+        pdf.text(`Usuario: ${selectedUserName.value}`, pageWidth / 2, y, { align: 'center' })
+        y += 6
+      }
     }
+    
+    // Línea separadora
+    pdf.setDrawColor(229, 231, 235)
+    pdf.setLineWidth(0.5)
+    pdf.line(10, y, pageWidth - 10, y)
+    y += 10
     
     // Agregar tarjetas de métricas
     const metricCards = document.querySelectorAll('.metric-card')
@@ -366,107 +501,215 @@ async function downloadPdf() {
 
 <style scoped>
 .report-container { 
-  max-width: 1200px; 
-  margin: 2rem auto; 
-  padding: 1rem;
+  max-width: 1400px; 
+  margin: 0 auto; 
+  padding: 2rem;
+  background: #ffffff;
+  min-height: 100vh;
+  font-family: 'Roboto', sans-serif;
 }
 
-.report-header {
+.page-header {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 2rem;
+  margin-bottom: 2rem;
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: flex-start;
   gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.header-content {
+  flex: 1;
+  min-width: 300px;
+}
+
+.breadcrumb {
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.page-title {
+  color: #56005b;
+  font-size: 2rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.2;
+}
+
+.user-info-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #56005b 0%, #7a007f 100%);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-top: 0.75rem;
+  box-shadow: 0 2px 8px rgba(86, 0, 91, 0.2);
+}
+
+.badge-icon {
+  font-size: 1rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.filters-section {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.5rem;
   margin-bottom: 2rem;
 }
 
-.report-header h1 {
-  margin-top: 0;
-  font-size: 2rem;
-  font-weight: 700;
+.filters-container {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
-.report-header h6 {
-  color: #888888;
-  font-size: 1.5rem;
-  font-weight: 400;
-  margin: 0px;
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.filter-label {
+  color: #374151;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.filter-select {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  min-width: 200px;
+}
+
+.filter-select:hover {
+  border-color: #56005b;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #56005b;
+  box-shadow: 0 0 0 3px rgba(86, 0, 91, 0.1);
+}
+
+.filter-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.filter-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #56005b;
 }
 
 /* Tarjetas de métricas */
 .metrics-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1.5rem;
-  margin-top: 3rem;
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 }
 
 .metric-card {
-  background: #fff;
-  border-radius: 16px 16px 4px 4px;
-  color: #32621c;
-  padding: 1.5rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border-radius: 8px;
+  padding: 1.75rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  border: 1px solid rgba(0,0,0,0.05);
-  border-bottom: 4px solid #32621c;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  text-align: center;
+  border: 1px solid #e5e7eb;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .metric-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(86, 0, 91, 0.15);
+  border-color: #56005b;
 }
 
 .metric-info h3 {
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 700;
-  margin: 0;
+  margin: 0 0 0.5rem 0;
   line-height: 1;
+  color: #56005b;
 }
 
 .metric-info p {
-  font-size: 1rem;
-  margin: 0.25rem 0 0 0;
-  opacity: 0.9;
+  font-size: 0.95rem;
+  margin: 0;
+  color: #6b7280;
   font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* Grid del dashboard */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(550px, 1fr));
   gap: 2rem;
   margin-bottom: 2rem;
 }
 
 .domain-card { 
-  background: #fff; 
-  border-radius: 16px; 
-  padding: 1.5rem; 
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  border: 1px solid rgba(0,0,0,0.05);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: #ffffff; 
+  border-radius: 8px; 
+  padding: 2rem; 
+  border: 1px solid #e5e7eb;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .domain-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(86, 0, 91, 0.15);
+  border-color: #56005b;
 }
 
 .domain-header {
   text-align: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #f3f4f6;
 }
 
 .domain-header h2 {
-  color: #32621c;
-  margin: 0 0 0.75rem 0;
+  color: #56005b;
+  margin: 0 0 1rem 0;
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .domain-stats {
@@ -477,13 +720,13 @@ async function downloadPdf() {
 }
 
 .stat-item {
-  background: #f8f9fa;
-  padding: 0.4rem 0.8rem;
-  border-radius: 20px;
+  background: #f9fafb;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
   font-size: 0.85rem;
-  font-weight: 600;
-  color: #555;
-  border: 1px solid #e9ecef;
+  font-weight: 500;
+  color: #374151;
+  border: 1px solid #e5e7eb;
 }
 
 .canvas-container {
@@ -498,11 +741,11 @@ async function downloadPdf() {
   display: block;
 }
 
-.download-btn { 
-  background: #32621c;
+.btn-download { 
+  background: #56005b;
   color: #fff;
   border: none;
-  padding: 0.8rem 1.5rem;
+  padding: 0.75rem 1.5rem;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
@@ -512,15 +755,16 @@ async function downloadPdf() {
   align-items: center;
   gap: 0.5rem;
   white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(86, 0, 91, 0.2);
 }
 
-.download-btn:hover:not(:disabled) {
-  background: #2a5318;
+.btn-download:hover:not(:disabled) {
+  background: #7a007f;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(50, 98, 28, 0.3);
+  box-shadow: 0 4px 12px rgba(86, 0, 91, 0.3);
 }
 
-.download-btn:disabled {
+.btn-download:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
@@ -571,5 +815,57 @@ async function downloadPdf() {
   .metric-info h3 {
     font-size: 1.5rem;
   }
+}
+
+.user-list { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+  gap: 1.25rem; 
+  margin-bottom: 2rem;
+}
+
+.user-card { 
+  background: #ffffff; 
+  border-radius: 8px; 
+  padding: 1.25rem; 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  border: 1px solid #e5e7eb;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.user-card:hover {
+  border-color: #56005b;
+  box-shadow: 0 2px 8px rgba(86, 0, 91, 0.1);
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-card .muted { 
+  color: #6b7280; 
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.user-card button { 
+  background: #56005b; 
+  color: #fff; 
+  border: none; 
+  padding: 0.5rem 1rem; 
+  border-radius: 6px; 
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.user-card button:hover {
+  background: #7a007f;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(86, 0, 91, 0.3);
 }
 </style>
