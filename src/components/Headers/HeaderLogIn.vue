@@ -19,7 +19,7 @@
         <li><a href="#" @click.prevent="onOpenConocenos">Conócenos</a></li>
         <li v-if="isAdmin" class="admin-item">
           <a href="#" @click.prevent="onOpenAdminCenter" class="admin-link">
-            ⚙️ Administración
+            Administración
           </a>
         </li>
       </ul>
@@ -193,11 +193,9 @@ function onOpenAdminCenter() {
 
 .admin-link {
   color: #f9b115 !important;
-  font-weight: 500 !important;
 }
 
 .admin-link:hover {
-  opacity: 1 !important;
-  text-decoration: underline;
+  font-weight: 500 !important;
 }
 </style>
