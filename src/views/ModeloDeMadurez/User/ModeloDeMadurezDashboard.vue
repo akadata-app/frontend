@@ -398,10 +398,10 @@ async function downloadPdf() {
     // Crear encabezado del reporte con título y filtros
     const pageWidth = pdf.internal.pageSize.getWidth()
     
-    // Subtítulo "Modelo de Madurez"
+    // Subtítulo "MODELO DE MADUREZ"
     pdf.setFontSize(9)
     pdf.setTextColor(136, 136, 136)
-    pdf.text('Modelo de Madurez', pageWidth / 2, y, { align: 'center' })
+    pdf.text('MODELO DE MADUREZ', pageWidth / 2, y, { align: 'center' })
     y += 8
     
     // Título del formulario

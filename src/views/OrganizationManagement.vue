@@ -125,7 +125,7 @@
               v-model="formData.name"
               type="text"
               required
-              placeholder="Ej: Universidad Nacional"
+              placeholder="Ej: Universidad de Antioquia"
               maxlength="100"
             />
           </div>
