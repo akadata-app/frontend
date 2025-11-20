@@ -57,12 +57,11 @@
     <!-- Botón de Acceso a la Herramienta -->
     <div v-if="isAuthenticated" class="tool-actions">
       <a href="https://forms.office.com/r/tUAyFGFjvf" target="_blank" rel="noopener noreferrer" class="tool-button">
-        <span class="button-icon">→</span>
         <span>IR A LA HERRAMIENTA</span>
+        <span class="button-icon">→</span>
       </a>
 
       <button v-if="userRole === 'ADMIN'" class="tool-button secondary" @click.prevent="onOpenConfiguracion">
-        <span class="button-icon">⚙</span>
         <span>CONFIGURACIÓN</span>
       </button>
     </div>
@@ -231,9 +230,10 @@ function onOpenConfiguracion() {
 /* Botones de Acción */
 .tool-actions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 1rem;
   align-items: center;
+  justify-content: center;
   margin: 3rem 0;
 }
 

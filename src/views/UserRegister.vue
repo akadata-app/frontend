@@ -1,5 +1,5 @@
 <template>
-  <div class="registro-wrapper">
+  <div class="registro-container">
     <!-- Overlay de éxito -->
     <div v-if="registrationSuccess" class="success-overlay">
       <div class="success-content">
@@ -13,9 +13,9 @@
     </div>
 
     <!-- Formulario -->
-    <div class="registro-container">
+    <div class="registro-card">
       <div class="registro-header">
-        <h1>Crear cuenta</h1>
+        <h2>Crear cuenta</h2>
         <p class="registro-subtitle">Únete a AKADATA y accede a todas nuestras herramientas</p>
       </div>
 
@@ -29,11 +29,9 @@
           {{ errorMsg }}
         </div>
 
-        <div class="form-columns">
-          <!-- Columna izquierda -->
-          <div class="form-col">
-            <h3 class="section-title">Información personal</h3>
-            
+        <div class="form-section">
+          <h3 class="section-title">Información personal</h3>
+          <div class="personal-fields">
             <div class="form-group">
               <label for="primerNombre">Primer nombre *</label>
               <input type="text" id="primerNombre" v-model="form.primerNombre" required class="form-input" />
@@ -54,11 +52,11 @@
               <input type="text" id="segundoApellido" v-model="form.segundoApellido" class="form-input" />
             </div>
           </div>
+        </div>
 
-          <!-- Columna derecha -->
-          <div class="form-col">
-            <h3 class="section-title">Información de cuenta</h3>
-            
+        <div class="form-section">
+          <h3 class="section-title">Información de cuenta</h3>
+          <div class="account-fields">
             <div class="form-group">
               <label for="email">Correo electrónico *</label>
               <input type="email" id="email" v-model="form.email" required class="form-input" placeholder="tu@correo.com" />
@@ -86,22 +84,23 @@
           <div class="org-fields">
             <div class="form-group">
               <label for="orgName">Nombre de organización</label>
-              <select id="orgName" v-model="form.orgName" class="form-input form-select">
+              <select id="orgName" v-model="form.orgName" @change="onOrganizationChange" class="form-input form-select">
                 <option value="">Selecciona una organización</option>
                 <option v-for="org in organizations" :key="org.id" :value="org.name">
                   {{ org.name }}
                 </option>
               </select>
             </div>
-            
-            <div class="form-group">
-              <label for="orgType">Tipo de organización</label>
-              <input type="text" id="orgType" v-model="form.orgType" class="form-input" />
-            </div>
-            
-            <div class="form-group">
-              <label for="orgSize">Tamaño de la organización</label>
-              <input type="text" id="orgSize" v-model="form.orgSize" class="form-input" />
+
+            <div v-if="selectedOrganization" class="org-info-readonly">
+              <div class="info-item">
+                <span class="info-label">Tipo:</span>
+                <span class="info-value">{{ selectedOrganization.industry }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Tamaño:</span>
+                <span class="info-value">{{ selectedOrganization.industrySize }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -122,11 +121,15 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, onMounted, computed } from 'vue'
 import { register } from '@/services/authService.js'
 import organizationService from '@/services/organizationService'
 
 const organizations = ref([])
+const selectedOrganization = computed(() => {
+  if (!form.orgName) return null
+  return organizations.value.find(org => org.name === form.orgName)
+})
 
 const form = reactive({
   primerNombre: '',
@@ -138,14 +141,16 @@ const form = reactive({
   password: '',
   confirmPassword: '',
   orgName: '',
-  orgType: '',
-  orgSize: '',
   acceptedTerms: false
 })
 
 const registrationSuccess = ref(false)
 const errorMsg = ref('')
 const loading = ref(false)
+
+function onOrganizationChange() {
+  // La organización seleccionada se actualiza automáticamente a través del computed
+}
 
 onMounted(async () => {
   try {
@@ -174,8 +179,8 @@ async function submitForm() {
       email: form.email,
       password: form.password,
       organizationName: form.orgName,
-      industry: form.orgType,
-      industrySize: form.orgSize
+      industry: selectedOrganization.value?.industry || '',
+      industrySize: selectedOrganization.value?.industrySize || ''
     }
     await register(userData)
     registrationSuccess.value = true
@@ -195,17 +200,14 @@ async function submitForm() {
 </script>
 
 <style scoped>
-.registro-wrapper {
-  position: relative;
-  min-height: calc(100vh - 200px);
-  padding: 2rem;
-  background: #ffffff;
+.registro-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 0 1rem;
   font-family: 'Roboto', sans-serif;
 }
 
-.registro-container {
-  max-width: 1000px;
-  margin: 0 auto;
+.registro-card {
   background: #ffffff;
   border-radius: 8px;
   border: 1px solid #e5e7eb;
@@ -214,10 +216,12 @@ async function submitForm() {
 
 .registro-header {
   text-align: center;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.registro-header h1 {
+.registro-header h2 {
   font-size: 1.75rem;
   font-weight: 600;
   color: #56005b;
@@ -226,7 +230,7 @@ async function submitForm() {
 
 .registro-subtitle {
   color: #6b7280;
-  font-size: 1rem;
+  font-size: 0.95rem;
   margin: 0;
 }
 
@@ -327,14 +331,10 @@ async function submitForm() {
   font-size: 1.2rem;
 }
 
-.form-columns {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 2.5rem;
-}
-
 .form-section {
-  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
 }
 
 .section-title {
@@ -346,10 +346,44 @@ async function submitForm() {
   border-bottom: 2px solid #e5e7eb;
 }
 
+.personal-fields,
+.account-fields {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
 .org-fields {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr;
   gap: 1.25rem;
+}
+
+.org-info-readonly {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.info-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #56005b;
+}
+
+.info-value {
+  font-size: 0.95rem;
+  color: #374151;
 }
 
 .form-group {
@@ -359,12 +393,13 @@ async function submitForm() {
 }
 
 .form-group label {
-  font-size: 0.9rem;
   font-weight: 600;
+  font-size: 0.9rem;
   color: #374151;
 }
 
 .form-input {
+  width: 100%;
   padding: 0.75rem 1rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
@@ -382,6 +417,19 @@ async function submitForm() {
 
 .form-input::placeholder {
   color: #9ca3af;
+}
+
+.form-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+}
+
+.form-select:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2356005b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
 }
 
 .checkbox-group {
@@ -426,8 +474,8 @@ async function submitForm() {
 .submit-button {
   width: 100%;
   padding: 0.875rem 2rem;
-  background: #ffc700;
-  color: #1c1c1c;
+  background: #56005b;
+  color: white;
   border: none;
   border-radius: 6px;
   font-size: 1rem;
@@ -435,10 +483,11 @@ async function submitForm() {
   font-family: 'Roboto', sans-serif;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  margin-top: 1rem;
 }
 
 .submit-button:hover:not(:disabled) {
-  background: #e2a100;
+  background: #7a007f;
 }
 
 .submit-button:disabled {
@@ -448,25 +497,31 @@ async function submitForm() {
 
 /* Responsive */
 @media (max-width: 1024px) {
-  .form-columns {
+  .personal-fields,
+  .account-fields {
     grid-template-columns: 1fr;
-    gap: 2rem;
   }
   
   .org-fields {
     grid-template-columns: 1fr;
   }
+  
+  .org-info-readonly {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
-  .registro-container {
+  .registro-card {
     padding: 2rem 1.5rem;
   }
   
-  .registro-header h1 {
-    font-size: 1.8rem;
+  .registro-header h2 {
+    font-size: 1.6rem;
   }
   
+  .personal-fields,
+  .account-fields,
   .org-fields {
     grid-template-columns: 1fr;
   }

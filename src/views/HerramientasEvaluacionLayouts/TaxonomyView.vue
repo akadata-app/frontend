@@ -55,12 +55,11 @@
     <!-- Botón de Acceso a la Herramienta -->
     <div v-if="isAuthenticated" class="tool-actions">
       <button class="tool-button" @click.prevent="onOpenHerramienta">
-        <span class="button-icon">→</span>
         <span>IR A LA HERRAMIENTA</span>
+        <span class="button-icon">→</span>
       </button>
 
       <button v-if="userRole === 'ADMIN'" class="tool-button secondary" @click.prevent="onOpenFormulario">
-        <span class="button-icon">⚙</span>
         <span>CONFIGURACIÓN</span>
       </button>
     </div>
@@ -232,9 +231,10 @@ function onOpenFormulario() {
 /* Botones de Acción */
 .tool-actions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 1rem;
   align-items: center;
+  justify-content: center;
   margin: 3rem 0;
 }
 

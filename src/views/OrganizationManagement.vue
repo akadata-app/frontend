@@ -46,7 +46,10 @@
               </button>
             </div>
           </div>
-          <p class="org-description">{{ org.description || 'Sin descripción' }}</p>
+          <div class="org-info">
+            <p><strong>Tipo:</strong> {{ org.industry }}</p>
+            <p><strong>Tamaño:</strong> {{ org.industrySize }}</p>
+          </div>
           <p class="org-date">Creada: {{ formatDate(org.createdAt) }}</p>
         </div>
 
@@ -127,14 +130,39 @@
             />
           </div>
           <div class="form-group">
-            <label for="orgDescription">Descripción</label>
-            <textarea
-              id="orgDescription"
-              v-model="formData.description"
-              placeholder="Descripción opcional de la organización"
-              rows="4"
-              maxlength="500"
-            ></textarea>
+            <label for="orgIndustry">Tipo *</label>
+            <select
+              id="orgIndustry"
+              v-model="formData.industry"
+              required
+            >
+              <option value="" disabled>Seleccione el tipo</option>
+              <option value="Gubernamental">Gubernamental</option>
+              <option value="Educación">Educación</option>
+              <option value="Salud">Salud</option>
+              <option value="Financiero">Financiero</option>
+              <option value="Tecnología">Tecnología</option>
+              <option value="Manufactura">Manufactura</option>
+              <option value="Comercio">Comercio</option>
+              <option value="Servicios">Servicios</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="orgSize">Tamaño *</label>
+            <select
+              id="orgSize"
+              v-model="formData.industrySize"
+              required
+            >
+              <option value="" disabled>Seleccione el tamaño</option>
+              <option value="1-10">1-10 empleados</option>
+              <option value="11-50">11-50 empleados</option>
+              <option value="51-200">51-200 empleados</option>
+              <option value="201-500">201-500 empleados</option>
+              <option value="501-1000">501-1000 empleados</option>
+              <option value="1000+">Más de 1000 empleados</option>
+            </select>
           </div>
           <div class="modal-footer">
             <button type="button" @click="closeModal" class="btn-secondary">
@@ -239,7 +267,8 @@ const changingRole = ref(false)
 const formData = ref({
   id: null,
   name: '',
-  description: ''
+  industry: '',
+  industrySize: ''
 })
 
 // Watch para cargar datos cuando cambia el tab
@@ -274,7 +303,8 @@ function openCreateModal() {
   formData.value = {
     id: null,
     name: '',
-    description: ''
+    industry: '',
+    industrySize: ''
   }
   showModal.value = true
 }
@@ -284,7 +314,8 @@ function openEditModal(org) {
   formData.value = {
     id: org.id,
     name: org.name,
-    description: org.description || ''
+    industry: org.industry || '',
+    industrySize: org.industrySize || ''
   }
   showModal.value = true
 }
@@ -294,13 +325,22 @@ function closeModal() {
   formData.value = {
     id: null,
     name: '',
-    description: ''
+    industry: '',
+    industrySize: ''
   }
 }
 
 async function saveOrganization() {
   if (!formData.value.name.trim()) {
     alert('El nombre es obligatorio')
+    return
+  }
+  if (!formData.value.industry) {
+    alert('El tipo es obligatorio')
+    return
+  }
+  if (!formData.value.industrySize) {
+    alert('El tamaño es obligatorio')
     return
   }
 
@@ -816,13 +856,41 @@ async function changeUserRole() {
 }
 
 .form-group input:focus,
-.form-group textarea:focus {
+.form-group textarea:focus,
+.form-group select:focus {
   outline: none;
   border-color: #56005b;
 }
 
 .form-group textarea {
   resize: vertical;
+}
+
+.form-group select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+  background: #fff;
+  transition: border-color 0.2s;
+}
+
+.org-info {
+  margin: 0.75rem 0;
+}
+
+.org-info p {
+  margin: 0.25rem 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.org-info strong {
+  color: #56005b;
+  font-weight: 500;
 }
 
 .warning-text {

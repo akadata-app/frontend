@@ -11,18 +11,21 @@
       </a>
     </div>
 
-    <nav class="nav">
+    <nav class="nav" :class="{ 'nav-open': menuOpen }">
+      <div class="mobile-actions">
+        <a href="/" class="login-button" @click="menuOpen = false">Ingresar</a>
+      </div>
       <ul class="nav-list">
-        <li><span @click="onOpenInicio" class="nav-clickable">Inicio</span></li>
-        <li><span @click="onOpenRessources" class="nav-clickable">Recursos abiertos</span></li>
-        <li><span @click="onHerramientasEvaluacion" class="nav-clickable">Herramientas</span></li>
-        <li><span @click="onOpenConocenos" class="nav-clickable">Conócenos</span></li>
+        <li><span @click="handleNavClick(onOpenInicio)" class="nav-clickable">Inicio</span></li>
+        <li><span @click="handleNavClick(onOpenRessources)" class="nav-clickable">Recursos abiertos</span></li>
+        <li><span @click="handleNavClick(onHerramientasEvaluacion)" class="nav-clickable">Herramientas</span></li>
+        <li><span @click="handleNavClick(onOpenConocenos)" class="nav-clickable">Conócenos</span></li>
       </ul>
     </nav>
 
     <div class="right-section">
       <a href="/" class="login-button">Ingresar</a>
-      <button class="menu-toggle" aria-label="Abrir menú">
+      <button class="menu-toggle" aria-label="Abrir menú" @click="toggleMenu">
         <img :src="menuIcon" alt="Icono menú" class="menu-icon" />
       </button>
     </div>
@@ -34,8 +37,19 @@ import logoUdeA from '@/assets/img/logosimbolo-horizontal-png.png'
 import menuIcon from '@/assets/img/menu.png'
 
 import { useRouter } from 'vue-router'
+import { ref } from 'vue'
 
 const router = useRouter()
+const menuOpen = ref(false)
+
+function toggleMenu() {
+  menuOpen.value = !menuOpen.value
+}
+
+function handleNavClick(action) {
+  action()
+  menuOpen.value = false
+}
 
 function onOpenInicio() {
   router.push({name: 'Inicio'})
@@ -143,5 +157,99 @@ function onHerramientasEvaluacion() {
   width: 24px;
   height: 24px;
   filter: brightness(100);
+}
+
+.mobile-actions {
+  display: none;
+}
+
+/* Responsive styles */
+@media (max-width: 1024px) {
+  .header {
+    padding: 1rem 1.5rem;
+  }
+
+  .nav {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 280px;
+    height: 100vh;
+    background-color: #32621c;
+    transition: right 0.3s ease;
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 1.5rem;
+    margin: 0;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .nav.nav-open {
+    right: 0;
+  }
+
+  .nav-list {
+    flex-direction: column;
+    gap: 0;
+    margin-top: 1rem;
+  }
+
+  .nav-list li {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .nav-clickable {
+    display: block;
+    padding: 1rem 0.5rem;
+    font-size: 1rem;
+  }
+
+  .mobile-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .mobile-actions .login-button {
+    width: 100%;
+    text-align: center;
+    display: block;
+  }
+
+  .right-section > .login-button {
+    display: none;
+  }
+
+  .menu-toggle {
+    display: block;
+  }
+}
+
+@media (min-width: 1025px) {
+  .menu-toggle {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0.875rem 1rem;
+  }
+
+  .logo {
+    height: 32px;
+  }
+
+  .site-title {
+    font-size: 1.2rem;
+  }
+
+  .nav {
+    width: 260px;
+    padding: 1.25rem;
+  }
 }
 </style>

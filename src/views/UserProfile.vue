@@ -48,7 +48,7 @@
                 class="form-input" 
               />
               <p class="field-hint">
-                El rol de usuario solo puede ser modificado por un administrador desde el Centro de Administración.
+                Para cambiar tu rol de usuario contacta a un administrador.
               </p>
             </div>
           </div>
@@ -59,7 +59,7 @@
           <div class="org-fields">
             <div class="form-group">
               <label>Nombre de organización</label>
-              <select v-model="form.organizationName" class="form-input form-select">
+              <select v-model="form.organizationName" @change="onOrganizationChange" class="form-input form-select">
                 <option value="">Selecciona una organización</option>
                 <option v-for="org in organizations" :key="org.id" :value="org.name">
                   {{ org.name }}
@@ -67,14 +67,15 @@
               </select>
             </div>
 
-            <div class="form-group">
-              <label>Tipo de organización</label>
-              <input v-model="form.industry" class="form-input" />
-            </div>
-
-            <div class="form-group">
-              <label>Tamaño de la organización</label>
-              <input v-model="form.industrySize" class="form-input" />
+            <div v-if="selectedOrganization" class="org-info-readonly">
+              <div class="info-item">
+                <span class="info-label">Tipo:</span>
+                <span class="info-value">{{ selectedOrganization.industry }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Tamaño:</span>
+                <span class="info-value">{{ selectedOrganization.industrySize }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -127,12 +128,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { getUserInfo, updateUserInfo } from '@/services/authService.js'
 import organizationService from '@/services/organizationService'
 
 const user = ref(null)
 const organizations = ref([])
+const selectedOrganization = computed(() => {
+  if (!form.value.organizationName) return null
+  return organizations.value.find(org => org.name === form.value.organizationName)
+})
 const form = ref({
   primerNombre: '',
   segundoNombre: '',
@@ -140,14 +145,17 @@ const form = ref({
   segundoApellido: '',
   email: '',
   organizationName: '',
-  industry: '',
-  industrySize: '',
   role: 'USER',
   newPassword: '',
   currentPassword: ''
 })
 const successMsg = ref('')
 const errorMsg = ref('')
+
+function onOrganizationChange() {
+  // La organización seleccionada se actualiza automáticamente a través del computed
+  // Los campos industry e industrySize se enviarán desde selectedOrganization en el submit
+}
 
 onMounted(async () => {
   try {
@@ -165,17 +173,21 @@ onMounted(async () => {
       segundoApellido: nameSecondParts[1] || '',
       email: userRes.data.email || '',
       organizationName: userRes.data.organizationName || '',
-      industry: userRes.data.industry || '',
-      industrySize: userRes.data.industrySize || '',
       role: userRes.data.role || 'USER',
       newPassword: '',
       currentPassword: ''
     }
     
-    // Cargar organizaciones
-    const orgsRes = await organizationService.getAll()
-    organizations.value = orgsRes.data
+    // Cargar organizaciones (no mostrar error si falla, es opcional)
+    try {
+      const orgsRes = await organizationService.getAll()
+      organizations.value = orgsRes.data
+    } catch (orgError) {
+      console.warn('No se pudieron cargar las organizaciones:', orgError)
+      organizations.value = []
+    }
   } catch (e) {
+    console.error('Error al cargar información del usuario:', e)
     errorMsg.value = "No se pudo cargar la información del usuario."
   }
 })
@@ -199,8 +211,8 @@ async function onSubmit() {
       nameSecond: `${form.value.segundoNombre} ${form.value.segundoApellido}`.trim(),
       email: form.value.email,
       organizationName: form.value.organizationName,
-      industry: form.value.industry,
-      industrySize: form.value.industrySize,
+      industry: selectedOrganization.value?.industry || '',
+      industrySize: selectedOrganization.value?.industrySize || '',
       currentPassword: form.value.currentPassword // Siempre requerido por el backend
     }
     
@@ -243,8 +255,6 @@ async function onSubmit() {
         segundoApellido: nameSecondParts[1] || '',
         email: userRes.data.email || '',
         organizationName: userRes.data.organizationName || '',
-        industry: userRes.data.industry || '',
-        industrySize: userRes.data.industrySize || '',
         role: userRes.data.role || 'USER',
         newPassword: '',
         currentPassword: ''
@@ -330,8 +340,35 @@ async function onSubmit() {
 
 .org-fields {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr;
   gap: 1.25rem;
+}
+
+.org-info-readonly {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.info-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #56005b;
+}
+
+.info-value {
+  font-size: 0.95rem;
+  color: #374151;
 }
 
 .form-group {
@@ -463,6 +500,10 @@ async function onSubmit() {
   }
   
   .org-fields {
+    grid-template-columns: 1fr;
+  }
+  
+  .org-info-readonly {
     grid-template-columns: 1fr;
   }
 }

@@ -11,24 +11,24 @@
       </a>
     </div>
 
-    <nav class="nav">
+    <nav class="nav" :class="{ 'nav-open': menuOpen }">
+      <div class="mobile-actions">
+        <span class="user-button" @click="handleNavClick(onOpenProfile)">{{ userName }}</span>
+        <a href="#" class="logout-button" @click.prevent="handleNavClick(onLogout)">Cerrar sesión</a>
+      </div>
       <ul class="nav-list">
-        <li><a href="#" @click.prevent="onOpenInicio">Inicio</a></li>
-        <li><a href="#" @click.prevent="onOpenRessources">Recursos abiertos</a></li>
-        <li><a href="#" @click.prevent="onHerramientasEvaluacion">Herramientas</a></li>
-        <li><a href="#" @click.prevent="onOpenConocenos">Conócenos</a></li>
-        <li v-if="isAdmin" class="admin-item">
-          <a href="#" @click.prevent="onOpenAdminCenter" class="admin-link">
-            Administración
-          </a>
-        </li>
+        <li><a href="#" @click.prevent="handleNavClick(onOpenInicio)">Inicio</a></li>
+        <li><a href="#" @click.prevent="handleNavClick(onOpenRessources)">Recursos abiertos</a></li>
+        <li><a href="#" @click.prevent="handleNavClick(onHerramientasEvaluacion)">Herramientas</a></li>
+        <li><a href="#" @click.prevent="handleNavClick(onOpenConocenos)">Conócenos</a></li>
+        <li v-if="isAdmin" class="admin-item"><a href="#" @click.prevent="handleNavClick(onOpenAdminCenter)" class="admin-link">Administración</a></li>
       </ul>
     </nav>
 
     <div class="right-section">
       <span class="user-button" @click="onOpenProfile">{{ userName }}</span>
       <a href="#" class="logout-button" @click.prevent="onLogout">Cerrar sesión</a>
-      <button class="menu-toggle" aria-label="Abrir menú">
+      <button class="menu-toggle" aria-label="Abrir menú" @click="toggleMenu">
         <img :src="menuIcon" alt="Icono menú" class="menu-icon" />
       </button>
     </div>
@@ -45,12 +45,22 @@ import { ref, onMounted, computed } from 'vue'
 const router = useRouter()
 const userName = ref('')
 const userRole = ref('')
+const menuOpen = ref(false)
 const isAdmin = computed(() => userRole.value === 'ADMIN')
 
 onMounted(() => {
   userName.value = getUserName() || 'Usuario'
   userRole.value = getUserRole() || ''
 })
+
+function toggleMenu() {
+  menuOpen.value = !menuOpen.value
+}
+
+function handleNavClick(action) {
+  action()
+  menuOpen.value = false
+}
 
 function onLogout() {
   logout()
@@ -195,7 +205,100 @@ function onOpenAdminCenter() {
   color: #f9b115 !important;
 }
 
-.admin-link:hover {
-  font-weight: 500 !important;
+
+.mobile-actions {
+  display: none;
+}
+
+/* Responsive styles */
+@media (max-width: 1024px) {
+  .header {
+    padding: 1rem 1.5rem;
+  }
+
+  .nav {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 280px;
+    height: 100vh;
+    background-color: #32621c;
+    transition: right 0.3s ease;
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 1.5rem;
+    margin: 0;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .nav.nav-open {
+    right: 0;
+  }
+
+  .nav-list {
+    flex-direction: column;
+    gap: 0;
+    margin-top: 1rem;
+  }
+
+  .nav-list li {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .nav-list a {
+    display: block;
+    padding: 1rem 0.5rem;
+    font-size: 1rem;
+  }
+
+  .mobile-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .mobile-actions .user-button,
+  .mobile-actions .logout-button {
+    width: 100%;
+    text-align: center;
+    display: block;
+  }
+
+  .right-section > .user-button,
+  .right-section > .logout-button {
+    display: none;
+  }
+
+  .menu-toggle {
+    display: block;
+  }
+}
+
+@media (min-width: 1025px) {
+  .menu-toggle {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0.875rem 1rem;
+  }
+
+  .logo {
+    height: 32px;
+  }
+
+  .site-title {
+    font-size: 1.2rem;
+  }
+
+  .nav {
+    width: 260px;
+    padding: 1.25rem;
+  }
 }
 </style>
