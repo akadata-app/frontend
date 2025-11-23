@@ -4,7 +4,7 @@
       Universidad de Antioquia — In2Lab<br />
       Proyecto de Investigación SIIU 2024-72450 Framework de Gobernanza de Datos para Instituciones de Educación Superior<br />
       Medellín, Colombia<br />
-      © 2025 Akadata — Todos los derechos reservadoss
+      © 2025 Akadata — Todos los derechos reservados
     </p>
   </footer>
 </template>
