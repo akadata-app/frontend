@@ -843,28 +843,46 @@ const handleSubmit = async () => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-  background: #ffffff;
-  min-height: calc(100vh - 200px);
-  font-family: 'Roboto', sans-serif;
+  background: linear-gradient(180deg, #fafafa 0%, #ffffff 100%);
+  min-height: calc(100vh - 140px);
 }
 
 .page-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f3e5f5 0%, #e8f5e9 100%);
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.page-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2356005b' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.5;
 }
 
 .page-title {
-  font-size: 2rem;
-  font-weight: 600;
-  color: #56005b;
-  margin-bottom: 0.5rem;
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin-bottom: 0.75rem;
+  position: relative;
 }
 
 .page-subtitle {
-  font-size: 0.95rem;
-  color: #6b7280;
+  font-size: 1rem;
+  color: #4b5563;
   max-width: 600px;
   margin: 0 auto;
+  line-height: 1.6;
+  position: relative;
 }
 
 .filter-bar {
@@ -872,8 +890,9 @@ const handleSubmit = async () => {
   gap: 1rem;
   margin-bottom: 2rem;
   padding: 1rem;
-  background: #f9fafb;
-  border-radius: 6px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   border: 1px solid #e5e7eb;
 }
 
@@ -927,20 +946,21 @@ const handleSubmit = async () => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: #56005b;
+  background: linear-gradient(135deg, #56005b 0%, #7b1fa2 100%);
   color: white;
   border: none;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  font-weight: 500;
-  font-family: 'Roboto', sans-serif;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
   white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(86, 0, 91, 0.3);
 }
 
 .add-resource-btn:hover {
-  background: #7a007f;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(86, 0, 91, 0.4);
 }
 
 .btn-icon {

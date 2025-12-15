@@ -16,22 +16,18 @@
         <li><span @click="onOpenInicio" class="nav-clickable">Inicio</span></li>
         <li><span @click="onOpenRessources" class="nav-clickable">Recursos abiertos</span></li>
         <li><span @click="onHerramientasEvaluacion" class="nav-clickable">Herramientas</span></li>
-        <li><span @click="onOpenConocenos" class="nav-clickable">Conócenos</span></li>
+        <li><span @click="onOpenConocenos" class="nav-clickable">Conocenos</span></li>
       </ul>
     </nav>
 
     <div class="right-section">
       <a href="/" class="login-button">Ingresar</a>
-      <button class="menu-toggle" aria-label="Abrir menú">
-        <img :src="menuIcon" alt="Icono menú" class="menu-icon" />
-      </button>
     </div>
   </header>
 </template>
 
 <script setup>
 import logoUdeA from '@/assets/img/logosimbolo-horizontal-png.png'
-import menuIcon from '@/assets/img/menu.png'
 
 import { useRouter } from 'vue-router'
 
@@ -59,39 +55,54 @@ function onHerramientasEvaluacion() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #32621c;
-  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 50%, #388e3c 100%);
+  padding: 0.875rem 2.5rem;
   color: white;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.left-section {
+  display: flex;
+  align-items: center;
 }
 
 .logo-link {
   display: flex;
   align-items: center;
   text-decoration: none;
+  gap: 0.75rem;
 }
 
 .logo {
-  height: 40px;
-  margin-right: 0.75rem;
+  height: 44px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  transition: transform 0.2s ease;
+}
+
+.logo-link:hover .logo {
+  transform: scale(1.05);
 }
 
 .site-title {
-  font-size: 1.4rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 700;
   color: white;
   margin: 0;
-  font-family: 'Roboto', sans-serif;
+  letter-spacing: 0.5px;
 }
 
 .nav {
   flex: 1;
-  margin-left: 3rem;
+  display: flex;
+  justify-content: center;
 }
 
 .nav-list {
   display: flex;
-  gap: 2.5rem;
+  gap: 0.5rem;
   list-style: none;
   padding: 0;
   margin: 0;
@@ -99,49 +110,82 @@ function onHerramientasEvaluacion() {
 
 .nav-clickable {
   cursor: pointer;
-  color: white;
-  font-weight: 400;
-  font-size: 0.95rem;
-  font-family: 'Roboto', sans-serif;
-  transition: opacity 0.2s ease;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  font-size: 0.9rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  position: relative;
+  display: inline-block;
 }
 
 .nav-clickable:hover {
-  opacity: 0.8;
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+}
+
+.nav-clickable::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 20px;
+  height: 2px;
+  background-color: white;
+  border-radius: 1px;
+  transition: transform 0.2s ease;
+}
+
+.nav-clickable:hover::after {
+  transform: translateX(-50%) scaleX(1);
 }
 
 .right-section {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .login-button {
-  background-color: #f9b115;
-  color: #1c1c1c;
+  background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+  color: #1a1a1a;
   padding: 0.5rem 1.5rem;
   border: none;
-  border-radius: 6px;
+  border-radius: 9999px;
   text-decoration: none;
-  font-weight: 500;
-  font-family: 'Roboto', sans-serif;
-  transition: background-color 0.2s ease;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .login-button:hover {
-  background-color: #e2a100;
+  background: linear-gradient(135deg, #ffca28 0%, #ffc107 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+  color: #1a1a1a;
 }
 
-.menu-toggle {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.25rem;
+@media (max-width: 1024px) {
+  .header {
+    padding: 0.75rem 1.5rem;
+  }
+  
+  .nav-list {
+    gap: 0.25rem;
+  }
+  
+  .nav-clickable {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
 }
 
-.menu-icon {
-  width: 24px;
-  height: 24px;
-  filter: brightness(100);
+@media (max-width: 768px) {
+  .nav {
+    display: none;
+  }
 }
 </style>

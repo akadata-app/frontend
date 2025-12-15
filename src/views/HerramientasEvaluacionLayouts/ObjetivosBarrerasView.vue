@@ -56,10 +56,10 @@
 
     <!-- Botón de Acceso a la Herramienta -->
     <div v-if="isAuthenticated" class="tool-actions">
-      <a href="https://forms.office.com/r/tUAyFGFjvf" target="_blank" rel="noopener noreferrer" class="tool-button">
+      <router-link to="/barreras-oportunidades/forms" class="tool-button">
         <span class="button-icon">→</span>
         <span>IR A LA HERRAMIENTA</span>
-      </a>
+      </router-link>
 
       <button v-if="userRole === 'ADMIN'" class="tool-button secondary" @click.prevent="onOpenConfiguracion">
         <span class="button-icon">⚙</span>
@@ -88,8 +88,7 @@ onMounted(() => {
 })
 
 function onOpenConfiguracion() {
-  // Aquí puedes agregar la lógica para abrir la configuración
-  console.log('Abrir configuración')
+  router.push('/barreras-oportunidades/administrator')
 }
 </script>
 

@@ -127,26 +127,24 @@ const handleDelete = (event) => {
   display: flex;
   flex-direction: column;
   cursor: pointer;
-  background: #ffffff;
-  border-radius: 6px;
-  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 16px;
   overflow: hidden;
-  font-family: 'Roboto', sans-serif;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f0f0f0;
 }
 
 .resource-card:hover {
-  border-color: #56005b;
-  box-shadow: 0 4px 12px rgba(86, 0, 91, 0.15);
-  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(86, 0, 91, 0.15);
+  transform: translateY(-6px);
 }
 
 .resource-image-wrapper {
   width: 100%;
   height: 180px;
   overflow: hidden;
-  background: #f3f4f6;
+  background: linear-gradient(135deg, #f3e5f5 0%, #e8f5e9 100%);
   position: relative;
 }
 
@@ -154,21 +152,31 @@ const handleDelete = (event) => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.resource-card:hover .resource-img {
+  transform: scale(1.05);
 }
 
 .resource-content {
-  padding: 1.25rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  flex: 1;
 }
 
 .resource-title {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1.05rem;
+  font-weight: 700;
   margin: 0;
-  color: #56005b;
+  color: #1a1a1a;
   line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .resource-formats {
@@ -180,35 +188,38 @@ const handleDelete = (event) => {
 
 .format-tag {
   display: inline-block;
-  padding: 0.25rem 0.5rem;
-  background: #f3f4f6;
+  padding: 0.25rem 0.75rem;
+  background: linear-gradient(135deg, #f3e5f5 0%, #e8f5e9 100%);
   color: #56005b;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .resource-description {
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   color: #6b7280;
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.6;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  flex: 1;
 }
 
 .resource-link-hint {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-top: 0.5rem;
-  padding-top: 0.75rem;
-  border-top: 1px dashed #e5e7eb;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid #f0f0f0;
   font-size: 0.75rem;
   color: #56005b;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .link-icon {
@@ -221,26 +232,33 @@ const handleDelete = (event) => {
 
 .resource-actions {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
+  top: 0.75rem;
+  right: 0.75rem;
   display: flex;
   gap: 0.5rem;
   z-index: 10;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: all 0.2s ease;
+}
+
+.resource-card:hover .resource-actions {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .action-btn {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1rem;
   transition: all 0.2s ease;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(4px);
+  background: white;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
@@ -257,7 +275,6 @@ const handleDelete = (event) => {
   background: #fef2f2;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .resource-card {
     max-width: 100%;
@@ -265,6 +282,11 @@ const handleDelete = (event) => {
   
   .resource-image-wrapper {
     height: 160px;
+  }
+  
+  .resource-actions {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

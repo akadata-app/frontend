@@ -1,23 +1,31 @@
 <template>
   <div
     class="madurez-page"
-    :class="{ 'drawer-open': drawerOpen }"
     :style="{ '--header-h': headerH + 'px', '--footer-h': footerH + 'px' }"
   >
-    <!-- ===== Bouton hamburger (menu Formulaires) ===== -->
-    <button
-      class="menu-btn"
-      :class="{ inside: menuOpen }"
-      type="button"
-      @click="toggleMenu"
-      :aria-expanded="menuOpen.toString()"
-      aria-controls="side-menu"
-      aria-label="Abrir/Cerrar menú de formularios"
-    >
-      <img src="@/assets/img/menu.png" alt="" />
-    </button>
+    <!-- ===== TOOLBAR INTEGRADO ===== -->
+    <header class="page-toolbar">
+      <button
+        class="toolbar-menu-btn"
+        type="button"
+        @click="toggleMenu"
+        aria-label="Abrir menu de formularios"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+        <span>Formularios</span>
+      </button>
+      <h1 class="toolbar-title" v-if="currentForm">{{ currentForm.title || currentForm.nombre }}</h1>
+      <div class="toolbar-spacer"></div>
+    </header>
 
-    <!-- ===== Menu latéral : Liste de formularios ===== -->
+    <!-- ===== MODAL BACKDROP ===== -->
+    <div class="modal-backdrop" :class="{ open: menuOpen }" @click="toggleMenu"></div>
+
+    <!-- ===== Menu lateral modal ===== -->
     <aside
       id="side-menu"
       class="side-menu"
@@ -25,17 +33,24 @@
       role="navigation"
       aria-label="Lista de formularios"
     >
+      <div class="menu-header">
+        <h2>Formularios</h2>
+        <button class="menu-close" @click="toggleMenu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
       <div class="menu-content">
-        <h2>Lista de formularios</h2>
-
         <div class="new-item">
           <button class="new-btn" type="button" @click="addForm">
-            <span class="emoji">➕</span> Nuevo formulario
+            + Nuevo formulario
           </button>
         </div>
 
-        <div v-if="loading.forms" class="muted">Cargando…</div>
-        <div v-else-if="!formularios.length" class="muted">Aucun formulario</div>
+        <div v-if="loading.forms" class="muted">Cargando...</div>
+        <div v-else-if="!formularios.length" class="muted">No hay formularios</div>
 
         <ul v-else>
           <li
@@ -46,97 +61,107 @@
             title="Seleccionar formulario"
           >
             <span class="item">
-              <span class="emoji">📂</span>
               <span class="name">{{ form.nombre }}</span>
             </span>
 
             <div class="row-actions">
-              <button
-                class="rename-btn"
-                title="Renombrar"
-                type="button"
-                @click.stop="renameForm(form)"
-              >✏️</button>
-
-              <button
-                class="delete-btn"
-                title="Eliminar"
-                type="button"
-                @click.stop="deleteForm(form.id)"
-              >🗑</button>
+              <button class="rename-btn" title="Renombrar" type="button" @click.stop="renameForm(form)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+              <button class="delete-btn" title="Eliminar" type="button" @click.stop="deleteForm(form.id)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+              </button>
             </div>
           </li>
         </ul>
       </div>
     </aside>
 
-    <!-- ===== Colonne gauche : dominios du formulario courant ===== -->
-    <aside class="left" v-if="currentForm">
-      <h2 class="left-title">{{ currentForm.title || currentForm.nombre }}</h2>
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="main-content" v-if="currentForm">
+      <!-- Columna izquierda: Dominios -->
+      <div class="left">
+        <h2 class="left-title">Dominios</h2>
 
-      <ul class="dominios">
-        <li v-for="(dom, i) in currentForm.dominios" :key="dom.id || i" class="dom-item">
-          <button
-            class="dom-pill"
-            :class="{ active: selectedDomainKey === (dom.id ?? i) }"
-            type="button"
-            @click="openEditor(dom.id ?? i)"
-            :title="dom.nombre || ('Dominio ' + (i + 1))"
-          >
-            <span class="label">{{ dom.nombre || ('Dominio ' + (i + 1)) }}</span>
+        <ul class="dominios">
+          <li v-for="(dom, i) in currentForm.dominios" :key="dom.id || i" class="dom-item">
+            <button
+              class="dom-pill"
+              :class="{ active: selectedDomainKey === (dom.id ?? i) }"
+              type="button"
+              @click="openEditor(dom.id ?? i)"
+              :title="dom.nombre || ('Dominio ' + (i + 1))"
+            >
+              <span class="label">{{ dom.nombre || ('Dominio ' + (i + 1)) }}</span>
+            </button>
+          </li>
+        </ul>
+
+        <div class="left-actions">
+          <button class="add-domain" type="button" @click="addDominio">
+            + Nuevo dominio
           </button>
-        </li>
-      </ul>
 
-      <div class="left-actions">
-        <button class="add-domain" type="button" @click="addDominio">
-          <span class="plus">＋</span> Nuevo dominio
-        </button>
+          <button
+            class="del-domain"
+            type="button"
+            :disabled="!currentForm || currentForm.dominios.length <= 1"
+            @click="removeDominio"
+            title="Eliminar dominio"
+          >
+            Eliminar
+          </button>
+        </div>
+      </div>
 
-        <button
-          class="del-domain"
-          type="button"
-          :disabled="!currentForm || currentForm.dominios.length <= 1"
-          @click="removeDominio"
-          title="Eliminar el dominio seleccionado (o el último si ninguno está abierto)"
-        >
-          🗑 Eliminar dominio
+      <!-- Columna derecha: Info -->
+      <div class="right">
+        <section class="info-card" aria-labelledby="info-title">
+          <h3 id="info-title">Informacion para el usuario</h3>
+
+          <div class="info-group">
+            <label for="infodesc">Descripcion</label>
+            <textarea id="infodesc" rows="4" v-model="currentForm.info.descripcion"></textarea>
+          </div>
+
+          <div class="info-group">
+            <label for="infodir">A quien va dirigido?</label>
+            <textarea id="infodir" rows="3" v-model="currentForm.info.dirigido"></textarea>
+          </div>
+
+          <div class="info-group">
+            <label for="infores">Que resultado ofrece?</label>
+            <textarea id="infores" rows="3" v-model="currentForm.info.resultado"></textarea>
+          </div>
+
+          <div class="actions" style="justify-content:flex-end;margin-top:10px">
+            <button class="primary" type="button" :disabled="saving" @click="saveForm">Guardar ficha</button>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- MODAL BACKDROP PARA EDITOR -->
+    <div class="modal-backdrop editor-backdrop" :class="{ open: drawerOpen }" @click="closeEditor"></div>
+
+    <!-- MODAL EDITOR DE DOMINIO -->
+    <div class="editor-modal" :class="{ open: drawerOpen }" v-if="currentDominio" role="dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Dominio {{ dominioIndex + 1 }}</h3>
+        <button class="modal-close" type="button" @click="closeEditor" aria-label="Cerrar editor">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
         </button>
       </div>
-    </aside>
-
-    <!-- ===== Panneau droit : info / drawer edición ===== -->
-    <main class="right" v-if="currentForm">
-      <section v-if="!drawerOpen" class="info-card" aria-labelledby="info-title">
-        <h3 id="info-title">Información para el usuario</h3>
-
-        <div class="info-group">
-          <label for="infodesc">Descripción</label>
-          <textarea id="infodesc" rows="4" v-model="currentForm.info.descripcion"></textarea>
-        </div>
-
-        <div class="info-group">
-          <label for="infodir">¿A quién va dirigido?</label>
-          <textarea id="infodir" rows="3" v-model="currentForm.info.dirigido"></textarea>
-        </div>
-
-        <div class="info-group">
-          <label for="infores">¿Qué resultado ofrece?</label>
-          <textarea id="infores" rows="3" v-model="currentForm.info.resultado"></textarea>
-        </div>
-
-        <div class="actions" style="justify-content:flex-end;margin-top:10px">
-          <button class="primary" type="button" :disabled="saving" @click="saveForm">Guardar ficha</button>
-        </div>
-      </section>
-
-      <!-- Drawer d’édition Dominio/KDA -->
-      <section class="drawer" :class="{ open: drawerOpen }" v-if="currentDominio">
-        <button class="close" type="button" @click="closeEditor" aria-label="Cerrar editor">✕</button>
-
-        <header class="drawer-head">
-          <h3>Dominio {{ dominioIndex + 1 }}</h3>
-        </header>
+      <div class="modal-body">
 
         <div class="group">
           <label>Nombre del dominio</label>
@@ -247,8 +272,8 @@
             </button>
           </div>
         </div>
-      </section>
-    </main>
+      </div>
+    </div>
 
     <div v-if="error" class="toast error">{{ error }}</div>
     <div v-if="success" class="toast ok">{{ success }}</div>
@@ -754,128 +779,188 @@ onMounted(fetchFormsList)
 </script>
 
 <style scoped>
-/* ===== variables / styles : identiques à la version validée ===== */
-.madurez-page{
-  --violet: #b28cb0;
-  --violet-dark: #4b0a3b;
-  --violet-soft: #e9d7e8;
+/* Variables */
+.madurez-page {
+  --menu-w: 320px;
+  --violet: #56005b;
+  --violet-dark: #3d0041;
+  --violet-soft: #f3e5f5;
   --text: #1a1a1a;
-  --pill-bg: #e6e6e6;
-  --card-bg: #ad88a7;
-  --dot-on: #4b0a3b;
-  --dot-off: #c8a9c5;
+  --pill-bg: white;
+  --card-bg: white;
+  --dot-on: #56005b;
+  --dot-off: #e9ecef;
+  --border: #e9ecef;
+  --bg: #f8f9fa;
 
-  display:grid;
-  grid-template-columns: 360px 1fr;
-  gap:20px;
-  min-height: calc(100vh - var(--header-h) - var(--footer-h));
-  padding: max(0px, var(--header-h)) 18px max(0px, var(--footer-h));
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 140px);
   box-sizing: border-box;
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: system-ui, -apple-system, sans-serif;
   color: var(--text);
+  background: var(--bg);
 }
-.madurez-page.drawer-open{ padding-bottom: 0 !important; }
-.madurez-page.drawer-open .left{ padding-bottom: calc(8px + var(--footer-h)); }
 
-/* Hamburger + side menu */
-.menu-btn{
-  position: fixed;
-  left: 12px;
-  top: calc(var(--header-h) + 12px);
-  width: 40px; height: 40px;
-  display: grid; place-items: center;
-  background: var(--violet);
-  border: 2px solid var(--violet);
-  border-radius: 10px;
+/* ===== TOOLBAR INTEGRADO ===== */
+.page-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 2rem;
+  background: white;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.toolbar-menu-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
   cursor: pointer;
-  z-index: 60;
-  transition: left .28s ease, top .28s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text);
+  transition: all 0.2s ease;
 }
-.menu-btn img{ width: 22px; height: 22px; }
-.menu-btn.inside{ left: calc(340px - 56px); }
+.toolbar-menu-btn:hover {
+  background: var(--violet-soft);
+  border-color: var(--violet);
+}
+.toolbar-menu-btn svg { flex-shrink: 0; }
 
-.side-menu{
-  --menu-w: 340px;
+.toolbar-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.toolbar-spacer { flex: 1; }
+
+/* ===== MODAL BACKDROP ===== */
+.modal-backdrop {
   position: fixed;
-  left: calc(-1 * var(--menu-w));
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+.modal-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+.editor-backdrop { z-index: 200; }
+
+/* ===== MENU LATERAL MODAL ===== */
+.side-menu {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
   width: var(--menu-w);
-  top: var(--header-h);
-  bottom: var(--footer-h);
-  background: var(--violet);
-  box-shadow: 2px 0 6px rgba(0,0,0,.2);
-  transition: left .28s ease;
+  background: white;
+  box-shadow: 4px 0 24px rgba(0,0,0,.15);
+  z-index: 101;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
   z-index: 55;
   display: flex; flex-direction: column; min-height: 0;
 }
 .side-menu.open{ left: 0; }
-.menu-content{ flex: 1 1 auto; overflow-y: auto; padding: 14px 12px 16px; box-sizing: border-box; }
-.side-menu h2{ color: #fff; font-size: 1rem; margin: 4px 6px 12px; }
-.side-menu ul{ list-style: none; margin: 0; padding: 0 6px 8px; }
+.menu-content{ flex: 1 1 auto; overflow-y: auto; padding: 1.5rem 1rem; box-sizing: border-box; }
+.side-menu h2{ color: var(--text); font-size: 0.9rem; font-weight: 600; margin: 0 0 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+.side-menu ul{ list-style: none; margin: 0; padding: 0; }
 .side-menu li{
   display: flex; align-items: center; justify-content: space-between;
-  padding: 6px 6px; border-radius: 8px; cursor: pointer;
+  padding: 0.625rem 0.75rem; border-radius: 8px; cursor: pointer; margin-bottom: 0.25rem;
+  transition: background 0.15s ease;
 }
-.side-menu li:hover{ background: rgba(255,255,255,.12); }
-.side-menu li.active{ background: rgba(255,255,255,.22); }
-.item{ display: inline-flex; align-items: center; gap: 8px; color: #fff; font-size: .93rem; }
-.emoji{ width: 18px; text-align: center; }
-.row-actions{ display: inline-flex; gap: 6px; }
-.rename-btn, .delete-btn{ background: transparent; border: none; cursor: pointer; font-size: 1rem; }
-.delete-btn{ color: #5a0a0a; }
-.new-item{ padding: 0 6px 10px; }
+.side-menu li:hover{ background: var(--bg); }
+.side-menu li.active{ background: var(--violet-soft); }
+.item{ display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text); font-size: .9rem; }
+.emoji{ width: 18px; text-align: center; font-size: 0.9rem; }
+.row-actions{ display: inline-flex; gap: 0.25rem; opacity: 0; transition: opacity 0.15s ease; }
+.side-menu li:hover .row-actions{ opacity: 1; }
+.rename-btn, .delete-btn{ background: transparent; border: none; cursor: pointer; font-size: 0.85rem; padding: 0.25rem; border-radius: 4px; }
+.rename-btn:hover{ background: #e3f2fd; }
+.delete-btn:hover{ background: #ffebee; }
+.new-item{ padding: 0 0 1rem; }
 .new-btn{
-  width: 100%; background: #fff; color: var(--text);
-  font-weight: 600; border: none; border-radius: 999px; padding: 8px 12px; cursor: pointer;
+  width: 100%; background: var(--violet); color: white;
+  font-weight: 600; border: none; border-radius: 8px; padding: 0.75rem 1rem; cursor: pointer;
+  font-size: 0.875rem; transition: background 0.2s ease;
 }
+.new-btn:hover{ background: var(--violet-dark); }
 
 /* Colonne gauche */
-.left{ padding: 18px 8px 8px 4px; }
-.left-title{ font-size: 1.1rem; font-weight: 700; margin: 6px 8px 14px; }
-.dominios{ list-style: none; margin:0; padding:0 6px; display: grid; gap:12px; }
+.left{ 
+  padding: 1.5rem; 
+  background: white; 
+  border-radius: 12px; 
+  border: 1px solid var(--border);
+  height: fit-content;
+}
+.left-title{ font-size: 1.1rem; font-weight: 700; margin: 0 0 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+.dominios{ list-style: none; margin:0; padding:0; display: grid; gap: 0.75rem; }
 .dom-pill{
-  width: 100%; display: block; border: none; border-radius: 999px;
-  background: var(--pill-bg); padding: 12px 16px; text-align: left; cursor: pointer;
-  transition: background .18s ease, box-shadow .18s ease;
+  width: 100%; display: block; border: 1px solid var(--border); border-radius: 8px;
+  background: white; padding: 0.875rem 1rem; text-align: left; cursor: pointer;
+  transition: all .2s ease;
 }
-.dom-pill:hover{ background: #dedede; }
-.dom-pill.active{ background: var(--violet-soft); box-shadow: inset 0 0 0 3px #4b0a3b; }
-.dom-pill .label{ font-size: .95rem; color: #444; }
+.dom-pill:hover{ background: var(--bg); border-color: #dee2e6; }
+.dom-pill.active{ background: var(--violet-soft); border-color: var(--violet); }
+.dom-pill .label{ font-size: .9rem; color: var(--text); }
 
-.left-actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin: 14px 12px; }
+.left-actions{ display:flex; gap: 0.5rem; align-items:center; flex-wrap:wrap; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
 .add-domain, .del-domain{
-  border-radius: 999px; padding: 10px 14px; background: transparent; border: 2px solid #222; font-weight: 700; cursor: pointer; transition: all .18s ease;
+  border-radius: 8px; padding: 0.625rem 1rem; background: white; border: 1px solid var(--border); font-weight: 600; cursor: pointer; transition: all .2s ease; font-size: 0.85rem;
 }
-.add-domain:hover{ background: #222; color: #fff; }
-.del-domain{ border-color:#7a1f1f; color:#7a1f1f; }
-.del-domain:hover{ background:#7a1f1f; color:#fff; }
-.del-domain:disabled{ opacity:.5; cursor:not-allowed; background:transparent; color:#7a1f1f; }
+.add-domain:hover{ background: var(--violet); color: white; border-color: var(--violet); }
+.del-domain:hover{ background: #dc3545; color: white; border-color: #dc3545; }
+.del-domain:disabled{ opacity:.4; cursor:not-allowed; background: white; }
 
 /* Panneau droit / Drawer */
 .right{ position: relative; min-height: 560px; overflow: hidden; }
-.info-card{ background: var(--card-bg); border-radius: 12px; padding: 18px; max-width: 820px; }
-.info-card h3{ text-align: center; margin: 0 0 10px; font-size: 1.02rem; }
-.info-group{ margin: 10px 0; }
-.info-group label{ font-weight: 700; display:block; margin-bottom: 6px; }
-.info-group textarea{ width: 100%; min-height: 80px; resize: vertical; border: none; border-radius: 10px; padding: 10px 12px; background: #fff; font: inherit; }
+.info-card{ background: white; border-radius: 12px; padding: 1.5rem; max-width: 820px; border: 1px solid var(--border); }
+.info-card h3{ text-align: left; margin: 0 0 1rem; font-size: 1rem; font-weight: 600; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+.info-group{ margin: 1rem 0; }
+.info-group label{ font-weight: 500; display:block; margin-bottom: 0.5rem; font-size: 0.85rem; color: #495057; }
+.info-group textarea{ width: 100%; min-height: 80px; resize: vertical; border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; background: white; font: inherit; transition: border-color 0.2s ease; }
+.info-group textarea:focus{ outline: none; border-color: var(--violet); }
 
 .drawer{
   position: fixed; top: var(--header-h); right: 0;
   height: calc(100vh - var(--header-h) - var(--footer-h));
-  width: 0; max-width: 0; padding: 0; background: transparent; border-radius: 12px 0 0 12px;
+  width: 0; max-width: 0; padding: 0; background: transparent;
   visibility: hidden; pointer-events: none; z-index: 50;
   transform: translateX(100%);
-  transition: transform .28s ease, width .28s ease, max-width .28s ease, padding .18s ease, background .18s ease;
+  transition: transform .25s ease, width .25s ease, max-width .25s ease, padding .2s ease, background .2s ease;
   overflow: auto;
+  border-left: 1px solid var(--border);
 }
-.drawer.open{ transform: translateX(0); width: clamp(720px, 58vw, 980px); max-width: 980px; padding: 16px 16px 18px; background: var(--card-bg); visibility: visible; pointer-events: auto; }
+.drawer.open{ transform: translateX(0); width: clamp(680px, 58vw, 920px); max-width: 920px; padding: 1.5rem; background: white; visibility: visible; pointer-events: auto; box-shadow: -4px 0 24px rgba(0,0,0,.1); }
 .close{
   position: sticky; top: 4px; margin-left: auto; display: grid; place-items: center;
-  width: 28px; height: 28px; border-radius: 999px; border: none; background: #4b0a3b; color: #fff; cursor: pointer;
+  width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer;
+  transition: background 0.2s ease;
 }
-.drawer-head h3{ margin: 6px 6px 10px; font-size: 1.02rem; }
+.close:hover{ background: #dee2e6; }
+.drawer-head h3{ margin: 0.5rem 0 1rem; font-size: 1rem; font-weight: 600; }
 
-.kda-tabs{ display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 10px; }
-.kda-pill{ border: 2px solid rgba(0,0,0,.6); background: transparent; border-radius: 999px; padding: 6px 10px; font-weight: 700; cursor: pointer; }
+.kda-tabs{ display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0 1rem; }
+.kda-pill{ border: 1px solid var(--border); background: white; border-radius: 8px; padding: 0.5rem 0.875rem; font-weight: 600; cursor: pointer; font-size: 0.85rem; transition: all 0.2s ease; }
 .kda-pill.active{ background: var(--violet-soft); box-shadow: inset 0 0 0 2px #4b0a3b; }
 
 .group{ margin: 10px 0; display: flex; flex-direction: column; gap: 6px; }

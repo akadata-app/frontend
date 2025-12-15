@@ -81,6 +81,30 @@ const routes = [
     path: '/formulario-madurez',
     name: 'FormularioMadurez',
     component: () => import('@/views/ModeloDeMadurez/Administrator/FormularioMadurez.vue')
+  },
+  // Barreras y Oportunidades - administración
+  {
+    path: '/barreras-oportunidades/administrator',
+    name: 'FormularioBarrerasOportunidadesAdmin',
+    component: () => import('@/views/BarrerasOportunidades/Administrator/FormularioBarrerasOportunidades.vue')
+  },
+  // Barreras y Oportunidades - usuario
+  {
+    path: '/barreras-oportunidades/forms',
+    name: 'BarrerasOportunidadesFormList',
+    component: () => import('@/views/BarrerasOportunidades/User/BarrerasOportunidadesFormList.vue')
+  },
+  {
+    path: '/barreras-oportunidades/forms/:id',
+    name: 'BarrerasOportunidadesForm',
+    component: () => import('@/views/BarrerasOportunidades/User/BarrerasOportunidadesForm.vue'),
+    props: true
+  },
+  {
+    path: '/barreras-oportunidades/forms/:formId/reporte/:responseId',
+    name: 'BarrerasOportunidadesReport',
+    component: () => import('@/views/BarrerasOportunidades/User/BarrerasOportunidadesReport.vue'),
+    props: true
   }
 ]
 
@@ -108,6 +132,10 @@ router.beforeEach((to, from, next) => {
     'ModeloDeMadurezFormDomain',
     'ModeloDeMadurezDashboard',
     'FormularioMadurez',
+    'FormularioBarrerasOportunidadesAdmin',
+    'BarrerasOportunidadesFormList',
+    'BarrerasOportunidadesForm',
+    'BarrerasOportunidadesReport',
     'UserProfile'
   ]
   
