@@ -47,8 +47,8 @@
             </div>
           </div>
           <div class="org-info">
-            <p><strong>Tipo:</strong> {{ org.industry }}</p>
-            <p><strong>Tamaño:</strong> {{ org.industrySize }}</p>
+            <p><strong>Tipo de institución:</strong> {{ org.industry }}</p>
+            <p><strong>Ubicación:</strong> {{ org.industrySize }}</p>
           </div>
           <p class="org-date">Creada: {{ formatDate(org.createdAt) }}</p>
         </div>
@@ -130,38 +130,46 @@
             />
           </div>
           <div class="form-group">
-            <label for="orgIndustry">Tipo *</label>
+            <label for="orgIndustry">Tipo de institución *</label>
             <select
               id="orgIndustry"
               v-model="formData.industry"
               required
             >
-              <option value="" disabled>Seleccione el tipo</option>
-              <option value="Gubernamental">Gubernamental</option>
-              <option value="Educación">Educación</option>
-              <option value="Salud">Salud</option>
-              <option value="Financiero">Financiero</option>
-              <option value="Tecnología">Tecnología</option>
-              <option value="Manufactura">Manufactura</option>
-              <option value="Comercio">Comercio</option>
-              <option value="Servicios">Servicios</option>
-              <option value="Otro">Otro</option>
+              <option value="" disabled>Seleccione el tipo de institución</option>
+              <option value="Institución pública">Institución pública</option>
+              <option value="Institución privada">Institución privada</option>
+              <option value="Institución mixta (público-privada)">Institución mixta (público-privada)</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="orgSize">Tamaño *</label>
+            <label for="orgSize">Ubicación *</label>
             <select
               id="orgSize"
               v-model="formData.industrySize"
               required
             >
-              <option value="" disabled>Seleccione el tamaño</option>
-              <option value="1-10">1-10 empleados</option>
-              <option value="11-50">11-50 empleados</option>
-              <option value="51-200">51-200 empleados</option>
-              <option value="201-500">201-500 empleados</option>
-              <option value="501-1000">501-1000 empleados</option>
-              <option value="1000+">Más de 1000 empleados</option>
+              <option value="" disabled>Seleccione la ubicación</option>
+              <option value="Bogotá D.C.">Bogotá D.C.</option>
+              <option value="Medellín">Medellín</option>
+              <option value="Cali">Cali</option>
+              <option value="Barranquilla">Barranquilla</option>
+              <option value="Cartagena">Cartagena</option>
+              <option value="Bucaramanga">Bucaramanga</option>
+              <option value="Pereira">Pereira</option>
+              <option value="Manizales">Manizales</option>
+              <option value="Santa Marta">Santa Marta</option>
+              <option value="Cúcuta">Cúcuta</option>
+              <option value="Ibagué">Ibagué</option>
+              <option value="Pasto">Pasto</option>
+              <option value="Villavicencio">Villavicencio</option>
+              <option value="Popayán">Popayán</option>
+              <option value="Neiva">Neiva</option>
+              <option value="Armenia">Armenia</option>
+              <option value="Tunja">Tunja</option>
+              <option value="Montería">Montería</option>
+              <option value="Valledupar">Valledupar</option>
+              <option value="Otra">Otra</option>
             </select>
           </div>
           <div class="modal-footer">
@@ -336,11 +344,11 @@ async function saveOrganization() {
     return
   }
   if (!formData.value.industry) {
-    alert('El tipo es obligatorio')
+    alert('El tipo de institución es obligatorio')
     return
   }
   if (!formData.value.industrySize) {
-    alert('El tamaño es obligatorio')
+    alert('La ubicación es obligatoria')
     return
   }
 
