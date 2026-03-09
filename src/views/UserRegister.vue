@@ -94,11 +94,11 @@
 
             <div v-if="selectedOrganization" class="org-info-readonly">
               <div class="info-item">
-                <span class="info-label">Tipo:</span>
+                <span class="info-label">Tipo de institución:</span>
                 <span class="info-value">{{ selectedOrganization.industry }}</span>
               </div>
               <div class="info-item">
-                <span class="info-label">Tamaño:</span>
+                <span class="info-label">Ubicación:</span>
                 <span class="info-value">{{ selectedOrganization.industrySize }}</span>
               </div>
             </div>
