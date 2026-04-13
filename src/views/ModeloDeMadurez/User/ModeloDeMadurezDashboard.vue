@@ -84,7 +84,7 @@
           </div>
           <div class="canvas-container">
             <canvas 
-              :ref="el => { if (el) canvasRefs[`dashboard-${domain.domainId}`] = el }"
+              :ref="el => setCanvasRef(domain.domainId, el)"
               width="500" 
               height="500"
             ></canvas>
@@ -98,14 +98,12 @@
 <script setup>
 import { onMounted, ref, nextTick, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import axios from 'axios'
 import MaturityModelService from '@/services/MaturityModelService'
 import { getUserRole } from '@/services/authService'
 import Chart from 'chart.js/auto'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 
-const API_ROOT = (import.meta?.env?.VITE_API_URL || 'http://localhost:8080').replace(/\/+$/, '')
 const route = useRoute()
 const formId = Number(route.params.formId)
 const report = ref(null)
@@ -119,6 +117,26 @@ const userList = ref([])
 const userRole = ref(getUserRole())
 const isAdmin = computed(() => userRole.value === 'ADMIN')
 const selectedUserName = ref(null)
+
+function setCanvasRef(domainId, el) {
+  const key = `dashboard-${domainId}`
+  if (el) {
+    canvasRefs.value[key] = el
+  } else {
+    delete canvasRefs.value[key]
+  }
+}
+
+function destroyCharts() {
+  charts.forEach((chart) => {
+    try {
+      chart.destroy()
+    } catch (e) {
+      console.warn('No se pudo destruir un chart previo:', e)
+    }
+  })
+  charts.length = 0
+}
 
 // Computed properties para las métricas
 const totalKdas = computed(() => {
@@ -230,7 +248,7 @@ function createCharts() {
                 font: { size: 11, weight: 'bold' },
                 color: '#333',
                 padding: 15,
-                callback: function(value, index) {
+                callback: function(value) {
                   // Dividir texto largo en múltiples líneas
                   const maxLength = 15;
                   if (value.length <= maxLength) {
@@ -338,11 +356,12 @@ async function loadDashboard(userId = null) {
     } else {
       selectedUserName.value = null
     }
+    // Limpiar estado visual antes de aplicar nuevos datos filtrados
+    destroyCharts()
+    canvasRefs.value = {}
+
     const { data } = await MaturityModelService.getDashboard(formId, params)
     report.value = data
-    // limpiar charts and refs for re-render
-    canvasRefs.value = {}
-    charts.length = 0
   } catch (err) {
     console.error('Error cargando dashboard filtrado:', err)
   }
@@ -358,11 +377,12 @@ async function loadPerUserList() {
   }
 }
 
-// Watcher para crear los gráficos cuando tanto los datos como las refs estén disponibles
-watch([report, canvasRefs], async () => {
-  if (report.value && Object.keys(canvasRefs.value).length > 0) {
+// Watcher para crear los gráficos cada vez que cambian los datos del reporte
+watch(report, async (newReport) => {
+  if (newReport) {
     await nextTick()
     setTimeout(async () => {
+      destroyCharts()
       createCharts()
       
       // Verificar si se debe descargar automáticamente el PDF

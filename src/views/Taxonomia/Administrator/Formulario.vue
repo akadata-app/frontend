@@ -245,7 +245,7 @@
 </template>
 
 <script setup>
-/* eslint-disable no-console */
+ 
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import Api from '@/services/TaxonomyFormService';
 
