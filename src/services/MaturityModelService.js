@@ -66,10 +66,11 @@ export default {
   },
   /* ===================== REPORTS ===================== */
   getDashboard (formId, params = {}) {
-    // params: { organization?: string, userId?: number }
+    // params: { organization?: string, userId?: number, userOnly?: boolean }
     const query = new URLSearchParams()
     if (params.organization) query.append('organization', params.organization)
     if (params.userId) query.append('userId', params.userId)
+    if (params.userOnly !== undefined) query.append('userOnly', String(params.userOnly))
     const qs = query.toString() ? `?${query.toString()}` : ''
     return axios.get(`${API_ROOT}${FORM_BASE}/report/${formId}/dashboard${qs}`)
   },
